@@ -1,4 +1,4 @@
-    var ran = function(max) {
+var ran = function(max) {
   return(Math.floor(Math.random() * max))
 };
 
@@ -19,16 +19,24 @@ var ctx = document.getElementById("canvas").getContext("2d")
 
 //relic
 //var grid = []
-var devMode = true;
+var username = "swaggot";
+
+var devMode = false;
+
+var underToggle = false;
+
+var chatToggle = false;
+
+
 var p1 = {
   items: [{item: "pipe", amount: 3}, {item: "generator", amount: 1}],
-  t1pool: {eco: ["drill s", "smelter", "appraiser"], weapon: ["mosquito", "alpha ray", "piercer"]},
+  t1pool: {eco: ["drill s", "smelter", "appraiser", "woodcutter"], weapon: ["mosquito", "alpha ray", "piercer"]},
   t2pool: {eco: ["drill m"], weapon: ["artillery", "cannon", "devastator"]},
   abilities: [],
   scrap: 40,
   tilemap: {
     pipe: {
-      timePlacement: [
+      time: [
         [1, 1, 1, 1, 0, 0, 0, 0], 
         [1, 1, 1, 1, 0, 0, 0, 0], 
         [1, 1, 1, 1, 0, 0, 0, 0], 
@@ -38,7 +46,7 @@ var p1 = {
         [1, 1, 1, 1, 0, 0, 0, 0], 
         [1, 1, 1, 1, 0, 0, 0, 0]
       ],
-      costPlacement: [
+      cost: [
         [12, 10, 5, 2, 0, 0, 0, 0], 
         [12, 10, 5, 2, 0, 0, 0, 0], 
         [12, 10, 5, 2, 0, 0, 0, 0], 
@@ -50,7 +58,7 @@ var p1 = {
       ]
     },
     production: {
-      timePlacement: [
+      time: [
         [2, 2, 1, 1, 1, 0, 0, 0], 
         [2, 2, 1, 1, 1, 0, 0, 0], 
         [2, 2, 1, 1, 1, 0, 0, 0], 
@@ -60,7 +68,7 @@ var p1 = {
         [2, 2, 1, 1, 1, 0, 0, 0], 
         [2, 2, 1, 1, 1, 0, 0, 0]
       ],
-      costPlacement: [
+      cost: [
         [20, 16, 10, 8, 5, 0, 0, 0], 
         [20, 16, 10, 8, 5, 0, 0, 0],
         [20, 16, 10, 8, 5, 0, 0, 0],
@@ -76,18 +84,18 @@ var p1 = {
   rotationsLeft: 2
 }
 if (devMode) {
-  p1.shopPool = ["pipe", "chest", "generator", "harvester", "chipper", "drill s", "smelter", "jumper", "appraiser", "mosquito", "alpha ray", "piercer", "drill m", "artillery", "cannon", "devastator", "firing array bp", "passive healer", "alloy healer", "woodcutter", "woodcutter saw", "woodcutter body"];
+  p1.shopPool = ["pipe", "chest", "generator", "harvester", "chipper", "drill s", "smelter", "jumper", "appraiser", "mosquito", "alpha ray", "piercer", "drill m", "artillery", "cannon", "devastator", "firing array bp", "passive healer", "alloy healer", "woodcutter", "polluter"];
   p1.scrap = 9999;
 }
 var p2 = {
   items: [{item: "pipe", amount: 3}, {item: "generator", amount: 1}],
-  t1pool: {eco: ["drill s", "smelter", "appraiser"], weapon: ["mosquito", "alpha ray", "piercer"]},
+  t1pool: {eco: ["drill s", "smelter", "appraiser", "woodcutter"], weapon: ["mosquito", "alpha ray", "piercer"]},
   t2pool: {eco: ["drill m"], weapon: ["artillery", "cannon", "devastator"]},
   abilities: [],
-  scrap: 30,
+  scrap: 20,
   tilemap: {
     pipe: {
-      timePlacement: [
+      time: [
         [0, 0, 0, 0, 1, 1, 1, 1], 
         [0, 0, 0, 0, 1, 1, 1, 1], 
         [0, 0, 0, 0, 1, 1, 1, 1], 
@@ -97,7 +105,7 @@ var p2 = {
         [0, 0, 0, 0, 1, 1, 1, 1], 
         [0, 0, 0, 0, 1, 1, 1, 1], 
       ],
-      costPlacement: [
+      cost: [
         [0, 0, 0, 0, 2, 5, 10, 12], 
         [0, 0, 0, 0, 2, 5, 10, 12],
         [0, 0, 0, 0, 2, 5, 10, 12],
@@ -109,7 +117,7 @@ var p2 = {
       ]
     },
     production: {
-      timePlacement: [
+      time: [
         [0, 0, 0, 1, 1, 1, 2, 2], 
         [0, 0, 0, 1, 1, 1, 2, 2], 
         [0, 0, 0, 1, 1, 1, 2, 2], 
@@ -119,7 +127,7 @@ var p2 = {
         [0, 0, 0, 1, 1, 1, 2, 2], 
         [0, 0, 0, 1, 1, 1, 2, 2], 
       ],
-      costPlacement: [
+      cost: [
         [0, 0, 0, 5, 8, 10, 16, 20], 
         [0, 0, 0, 5, 8, 10, 16, 20], 
         [0, 0, 0, 5, 8, 10, 16, 20], 
@@ -186,53 +194,89 @@ var directions = {
   c: false,
   s: false,
   a: false,
-  shift: false
+  shift: false,
+  up: false,
+  down: false
 };
 var rotActivated = false;
+var newKey = false;
+var sendMessage = false;
 addEventListener("keydown", function(e) {
-	if (e.code === "KeyR") {
-  	if (mode == "placing") {
-    	if (rot == "up") {
-      	rot = "right"
-      } else if (rot == "left") {
-      	rot = "up"
-      } else if (rot == "down") {
-      	rot = "left"
-      } else if (rot == "right") {
-      	rot = "down"
-      }
-    } else if (mode == "scan" && bonusUi == "autooutconfig") {
-      rotActivated = true;
-      if (rot == "up") {
-      	rot = "right"
-      } else if (rot == "left") {
-      	rot = "up"
-      } else if (rot == "down") {
-      	rot = "left"
-      } else if (rot == "right") {
-      	rot = "down"
-      }
-    } else if (mode == "deleting") {
-      rotActivated = true;
-    }
-  } else if (e.code == "Escape" || e.code == "KeyQ") {
-    mode = "none";
-  } else if (e.code == "Space") {
-    md = true;
-  } else if (e.code === "KeyT") {
-  	tPress = true;
-  } else if (e.code == "KeyZ") {
-    directions.z = true;
-  } else if (e.code == "KeyX") {
-    directions.x = true;
-  } else if (e.code == "KeyC") {
-    directions.c = true;
-  } else if (e.code == "KeyS") {
-    directions.s = true;
-  } else if (e.code == "KeyA") {
-    directions.a = true;
-  } else if (e.code == "ShiftLeft") {
-    directions.shift = true;
+	if (chatToggle) {
+		if (e.code.substring(0, 3) === "Key") {
+			newKey = e.code.substring(3, 4).toLowerCase();
+		}
+		if (e.code == "Space") {
+			newKey = " ";
+		}
+		if (e.code == "Backspace") {
+			currentMessage = currentMessage.slice(0, -1);
+		}
+		
+		if (e.code == "Enter") {
+			sendMessage = true;
+		}
+	} else {
+		if (e.code === "KeyR") {
+  		if (mode == "placing") {
+  	  	if (rot == "up") {
+  	    	rot = "right"
+  	    } else if (rot == "left") {
+  	    	rot = "up"
+  	    } else if (rot == "down") {
+  	    	rot = "left"
+  	    } else if (rot == "right") {
+  	    	rot = "down"
+  	    }
+  	  } else if (mode == "scan" && bonusUi == "autooutconfig") {
+  	    rotActivated = true;
+  	    if (rot == "up") {
+  	    	rot = "right"
+  	    } else if (rot == "left") {
+  	    	rot = "up"
+  	    } else if (rot == "down") {
+  	    	rot = "left"
+  	    } else if (rot == "right") {
+  	    	rot = "down"
+  	    }
+  	  } else if (mode == "deleting") {
+  	    rotActivated = true;
+  	  }
+  	} else if (e.code == "Escape" || e.code == "KeyQ") {
+  	  mode = "none";
+  	} else if (e.code == "Space") {
+  	  md = true;
+  	} else if (e.code === "KeyT") {
+  		tPress = true;
+  	} else if (e.code == "KeyZ") {
+  	  directions.z = true;
+  	} else if (e.code == "KeyX") {
+  	  directions.x = true;
+  	} else if (e.code == "KeyC") {
+  	  directions.c = true;
+  	} else if (e.code == "KeyS") {
+  	  directions.s = true;
+  	} else if (e.code == "KeyA") {
+  	  directions.a = true;
+  	} else if (e.code == "ShiftLeft") {
+  	  directions.shift = true;
+  	} else if (e.code == "ArrowUp") {
+  		directions.up = true;
+  	} else if (e.code == "ArrowDown") {
+  		directions.down = true;
+  	} else if (e.code == "ControlLeft") {
+  	  if (underToggle) {
+  	    underToggle = false;
+  	  } else {
+  	    underToggle = true;
+  	  }
+  	} else if (e.code == "Semicolon") {
+  		if (chatToggle) {
+	      chatToggle = false;
+	    } else {
+	      chatToggle = true;
+ 	   }
+  	}
   }
 });
 
@@ -256,6 +300,10 @@ addEventListener("keyup", function(e) {
     directions.a = false;
   } else if (e.code == "ShiftLeft") {
     directions.shift = false;
+  } else if (e.code == "ArrowUp") {
+  	directions.up = false;
+  } else if (e.code == "ArrowDown") {
+  	directions.down = false;
   }
 });
 
@@ -300,20 +348,51 @@ UNIVERSAL GRID GUIDELINES:
 
 
 var platforms = [];
-var platform = function(x, y, w, h, level) {
+var platform = function(x, y, w, h, level, other) {
   this.x = x;
   this.y = y;
   this.w = w;
   this.h = h;
   this.level = level;
+  this.anim = false;
+  this.sides = false;
+  this.tiles = false;
+  if (other) {
+    if (other.anim) {
+      this.anim = true;
+      this.start = other.animStart;
+      this.end = other.animEnd;
+      this.time = other.animTime;
+      this.t = 0;
+    }
+
+    if (other.sides) {
+      this.sides = true;
+      this.up = other.sides.up;
+      this.down = other.sides.down;
+      this.left = other.sides.left;
+      this.right = other.sides.right;
+    }
+    
+    if (other.tiles) {
+      this.tiles = other.tiles;
+    }
+  }
 
 
   //creating the grid, 0 means empty space.
   this.grid = [];
+  this.under = [];
   for(var i = 0; i < w; i++) {
     this.grid.push([]);
     for(var j = 0; j < h; j++) {
-      this.grid[i].push(0)
+      this.grid[i].push(0);
+    }
+  }
+  for(var i = 0; i < w; i++) {
+    this.under.push([]);
+    for(var j = 0; j < h; j++) {
+      this.under[i].push(0);
     }
   }
 };
@@ -324,17 +403,104 @@ var platform = function(x, y, w, h, level) {
 //for repackage gear rotation animation
 var globalRRot = 0;
 platform.prototype.render = function() {
+  var ox = 0;
+  var oy = 0;
+  if (this.anim) {
+    ox = (this.end.x - this.start.x) * (this.t / this.time);
+    oy = (this.end.y - this.start.y) * (this.t / this.time);
+
+    if (this.t < this.time) {
+      this.t ++;
+    }
+    
+  }
+  this.x += ox;
+  this.y += oy;
+  
   ctx.fillStyle = "rgb(90, 30, 0)";
   var boardOffset = 12.5;
-  ctx.fillRect((this.x * 25 * sf) - boardOffset * sf, (this.y * 25 * sf) - boardOffset * sf, (this.w * 25 * sf) + (boardOffset * 2) * sf, (this.h * 25) * sf + (boardOffset * 2) * sf);
+  if (!this.sides) {
+    ctx.fillRect((this.x * 25 * sf) - boardOffset * sf, (this.y * 25 * sf) - boardOffset * sf, (this.w * 25 * sf) + (boardOffset * 2) * sf, (this.h * 25) * sf + (boardOffset * 2) * sf);
+  } else {
+    if (this.up) {
+      ctx.beginPath();
+      ctx.moveTo((this.x * 25) * sf, (this.y * 25) * sf);
+      ctx.lineTo(((this.x + this.w) * 25) * sf, ((this.y) * 25) * sf);
+      if (this.right) {
+        ctx.lineTo(((this.x + this.w) * 25 + boardOffset) * sf, ((this.y) * 25 - boardOffset) * sf);
+      } else {
+        ctx.lineTo(((this.x + this.w) * 25) * sf, ((this.y) * 25 - boardOffset) * sf);
+      }
+      if (this.left) {
+        ctx.lineTo((this.x * 25 - boardOffset) * sf, (this.y * 25 - boardOffset) * sf);
+      } else {
+        ctx.lineTo((this.x * 25) * sf, (this.y * 25 - boardOffset) * sf);
+      }
+      ctx.fill();
+    }
+
+    if (this.down) {
+      ctx.beginPath();
+      ctx.moveTo((this.x * 25) * sf, ((this.y + this.h) * 25) * sf);
+      ctx.lineTo(((this.x + this.w) * 25) * sf, ((this.y + this.h) * 25) * sf);
+      if (this.right) {
+        ctx.lineTo(((this.x + this.w) * 25 + boardOffset) * sf, ((this.y + this.h) * 25 + boardOffset) * sf);
+      } else {
+        ctx.lineTo(((this.x + this.w) * 25) * sf, ((this.y + this.h) * 25 + boardOffset) * sf);
+      }
+      if (this.left) {
+        ctx.lineTo((this.x * 25 - boardOffset) * sf, ((this.y + this.h) * 25 + boardOffset) * sf);
+      } else {
+        ctx.lineTo((this.x * 25) * sf, ((this.y + this.h) * 25 + boardOffset) * sf);
+      }
+      ctx.fill();
+    }
+
+    if (this.left) {
+      ctx.beginPath();
+      ctx.moveTo((this.x * 25) * sf, (this.y * 25) * sf);
+      ctx.lineTo((this.x * 25) * sf, ((this.y + this.h) * 25) * sf);
+      if (this.down) {
+        ctx.lineTo((this.x * 25 - boardOffset) * sf, ((this.y + this.h) * 25 + boardOffset) * sf);
+      } else {
+        ctx.lineTo((this.x * 25 - boardOffset) * sf, ((this.y + this.h) * 25) * sf);
+      }
+      if (this.up) {
+        ctx.lineTo((this.x * 25 - boardOffset) * sf, (this.y * 25 - boardOffset) * sf);
+      } else {
+        ctx.lineTo((this.x * 25 - boardOffset) * sf, (this.y * 25) * sf);
+      }
+      ctx.fill();
+    }
+
+    if (this.right) {
+      ctx.beginPath();
+      ctx.moveTo(((this.x + this.w) * 25) * sf, (this.y * 25) * sf);
+      ctx.lineTo(((this.x + this.w) * 25) * sf, ((this.y + this.h) * 25) * sf);
+      if (this.down) {
+        ctx.lineTo(((this.x + this.w) * 25 + boardOffset) * sf, ((this.y + this.h) * 25 + boardOffset) * sf);
+      } else {
+        ctx.lineTo(((this.x + this.w) * 25 + boardOffset) * sf, ((this.y + this.h) * 25) * sf);
+      }
+      if (this.up) {
+        ctx.lineTo(((this.x + this.w) * 25 + boardOffset) * sf, (this.y * 25 - boardOffset) * sf);
+      } else {
+        ctx.lineTo(((this.x + this.w) * 25 + boardOffset) * sf, (this.y * 25) * sf);
+      }
+      ctx.fill();
+    }
+  }
   for(var ist = 0; ist < this.w; ist ++) {
     for(var jst = 0; jst < this.h; jst ++) {
-      if ((this.x + ist + ((this.y + jst) % 2)) % 2 == 1) {
+      if (((this.x - ox) + ist + (((this.y - oy) + jst) % 2)) % 2 == 1) {
         ctx.fillStyle = "rgb(130, 50, 20)";
       } else {
         ctx.fillStyle = "rgb(240, 200, 140)";
       }
       ctx.fillRect(((this.x + ist) * 25) * sf, ((this.y + jst) * 25) * sf, 25 * sf, 25 * sf);
+      if (this.under[ist][jst] && underToggle) {
+        this.under[ist][jst].draw((this.x + ist) * 25, (this.y + jst) * 25);
+      }
     }
   }
 
@@ -345,8 +511,6 @@ platform.prototype.render = function() {
     for(var jst = 0; jst < this.h; jst ++) {
       if (this.grid[ist][jst]) {
         var p = this.grid[ist][jst];
-        if (p.type == "pipe") {
-        }
         p.draw(((this.x + ist) * 25), ((this.y + jst) * 25));
         var x = (this.x + ist) * 25;
         var y = (this.y + jst) * 25;
@@ -373,6 +537,8 @@ platform.prototype.render = function() {
       }
     }
   }
+  this.x -= ox;
+  this.y -= oy;
 };
 
 
@@ -399,6 +565,28 @@ var accessPoint = function(x, y, level) {
   }
   return(result)
 };
+
+var accessUnder = function(x, y, level) {
+  var result = null;
+  if (level) {
+    for (var i = 0; i < platforms.length; i++) {
+      if (platforms[i].x < x && platforms[i].x + platforms[i].w >= x && platforms[i].y < y && platforms[i].y + platforms[i].h >= y && level == platforms[i].level) {
+        var ox = x - platforms[i].x;
+        var oy = y - platforms[i].y;
+        result = platforms[i].under[ox - 1][oy - 1];
+      }
+    }
+  } else {
+    for (var i = 0; i < platforms.length; i++) {
+      if (platforms[i].x < x && platforms[i].x + platforms[i].w >= x && platforms[i].y < y && platforms[i].y + platforms[i].h >= y) {
+        var ox = x - platforms[i].x;
+        var oy = y - platforms[i].y;
+        result = platforms[i].under[ox - 1][oy - 1];
+      }
+    }
+  }
+  return(result);
+}
 
 
 
@@ -553,6 +741,17 @@ var piece = function(x, y, type, variant, direction, player, level) {
   this.isRepackaging = false;
 
 
+  this.pushItem = function(item) {
+    if (this.inventory) {
+      if (this.inventory.length < this.inventorySize) {
+        this.inventory.push(item);
+        return true;
+      }
+    }
+    return false;
+  }
+
+
 
 
   //defining special stuff
@@ -699,7 +898,6 @@ var piece = function(x, y, type, variant, direction, player, level) {
 
     this.hasDoneEot = false;
     this.eot = function() {
-      this.hasDoneEot = true;
       var nonEnergy = 0;
       for (var dw = 0; dw < this.inventory.length; dw ++) {
         if (this.inventory[dw] != "energy") {
@@ -1287,6 +1485,17 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasCompositeHealth = true;
     this.isBase = true;
 
+    this.pushItem = function(item) {
+    if (this.composite[0]) {
+      if (this.composite[0].inventory.length < this.composite[0].inventorySize) {
+        this.composite[0].inventory.push(item);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+
     this.compositeTakeDamage = function(dmg) {
       this.health -= dmg;
       if (this.health <= 0) {
@@ -1312,8 +1521,8 @@ var piece = function(x, y, type, variant, direction, player, level) {
       return(false);
     };
     this.compositeDeath = function() {
-      if (this.composite.length) {
-        var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
+      for(var gong = 0; gong < this.composite.length; gong ++) {
+        var t = getCoordsOnPlatform(this.composite[gong].x, this.composite[gong].y);
         t.platform.grid[t.x - 1][t.y - 1] = 0;
       }
       var t = getCoordsOnPlatform(this.x, this.y);
@@ -1371,6 +1580,19 @@ var piece = function(x, y, type, variant, direction, player, level) {
           }
         }
       }
+      if (turn >= 7) {
+        if (this.composite.length < 5 && platforms.length > 0) {
+          for(var gong = 0; gong < platforms[0].grid.length; gong ++) {
+            for(var bong = 0; bong < platforms[0].grid[gong].length; bong ++) {
+              if (platforms[0].grid[gong][bong]) {
+                if (platforms[0].grid[gong][bong].type == "p1 base expansion") {
+                  this.composite.push(platforms[0].grid[gong][bong]);
+                }
+              }
+            }
+          }
+        }
+      }
     }
   } else if (this.type == "p1 base storage") {
     this.inventory = [];
@@ -1382,6 +1604,16 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasCompositeHealth = true;
     this.hasSell = true;
     this.isBase = true;
+
+    this.pushItem = function(item) {
+      if (this.inventory) {
+        if (this.inventory.length < this.inventorySize) {
+          this.inventory.push(item);
+          return true;
+        }
+      }
+      return false;
+    }
 
     this.compositeTakeDamage = function(dmg) {
       if (this.composite.length > 0) {
@@ -1396,8 +1628,8 @@ var piece = function(x, y, type, variant, direction, player, level) {
 
 
     this.compositeDeath = function() {
-      if (this.composite.length) {
-        var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
+      for(var gong = 0; gong < this.composite.length; gong ++) {
+        var t = getCoordsOnPlatform(this.composite[gong].x, this.composite[gong].y);
         t.platform.grid[t.x - 1][t.y - 1] = 0;
       }
       var t = getCoordsOnPlatform(this.x, this.y);
@@ -1442,6 +1674,19 @@ var piece = function(x, y, type, variant, direction, player, level) {
           }
         }
       }
+      if (turn >= 7) {
+        if (this.composite.length < 5 && platforms.length > 0) {
+          for(var gong = 0; gong < platforms[0].grid.length; gong ++) {
+            for(var bong = 0; bong < platforms[0].grid[gong].length; bong ++) {
+              if (platforms[0].grid[gong][bong]) {
+                if (platforms[0].grid[gong][bong].type == "p1 base expansion") {
+                  this.composite.push(platforms[0].grid[gong][bong]);
+                }
+              }
+            }
+          }
+        }
+      }
       ctx.fillStyle = "rgb(200, 30, 50)";
       ctx.fillRect((x + 3) * sf, (y + 3) * sf, 22 * sf, 19 * sf);
       ctx.fillStyle = "rgb(50, 180, 225)";
@@ -1466,6 +1711,17 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasCompositeInventory = true;
     this.hasCompositeHealth = true;
     this.isBase = true;
+
+    this.pushItem = function(item) {
+    if (this.composite.length) {
+      if (this.composite[0].inventory.length < this.composite[0].inventorySize) {
+        this.composite[0].inventory.push(item);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
 
     this.compositeTakeDamage = function(dmg) {
       this.health -= dmg;
@@ -1493,8 +1749,8 @@ var piece = function(x, y, type, variant, direction, player, level) {
       return(false);
     };
     this.compositeDeath = function() {
-      if (this.composite.length) {
-        var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
+      for(var gong = 0; gong < this.composite.length; gong ++) {
+        var t = getCoordsOnPlatform(this.composite[gong].x, this.composite[gong].y);
         t.platform.grid[t.x - 1][t.y - 1] = 0;
       }
       var t = getCoordsOnPlatform(this.x, this.y);
@@ -1554,6 +1810,19 @@ var piece = function(x, y, type, variant, direction, player, level) {
           }
         }
       }
+      if (turn >= 7) {
+        if (this.composite.length < 5 && platforms.length > 0) {
+          for(var gong = 0; gong < platforms[0].grid.length; gong ++) {
+            for(var bong = 0; bong < platforms[0].grid[gong].length; bong ++) {
+              if (platforms[0].grid[gong][bong]) {
+                if (platforms[0].grid[gong][bong].type == "p2 base expansion") {
+                  this.composite.push(platforms[0].grid[gong][bong]);
+                }
+              }
+            }
+          }
+        }
+      }
     }
   } else if (this.type == "p2 base storage") {
     this.inventory = [];
@@ -1565,6 +1834,16 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasCompositeHealth = true;
     this.hasSell = true;
     this.isBase = true;
+
+    this.pushItem = function(item) {
+      if (this.inventory) {
+        if (this.inventory.length < this.inventorySize) {
+          this.inventory.push(item);
+          return true;
+        }
+      }
+      return false;
+    }
 
     this.compositeTakeDamage = function(dmg) {
       if (this.composite.length > 0) {
@@ -1591,12 +1870,12 @@ var piece = function(x, y, type, variant, direction, player, level) {
       return(false);
     };
     this.compositeDeath = function() {
-      if (this.composite.length) {
-        this.composite[0].compositeDeath();
-      } else {
-        var t = getCoordsOnPlatform(this.x, this.y);
+      for(var gong = 0; gong < this.composite.length; gong ++) {
+        var t = getCoordsOnPlatform(this.composite[gong].x, this.composite[gong].y);
         t.platform.grid[t.x - 1][t.y - 1] = 0;
       }
+      var t = getCoordsOnPlatform(this.x, this.y);
+      t.platform.grid[t.x - 1][t.y - 1] = 0;
     };
     if (this.composite.length == 0) {
       var index = accessPoint(this.x - 1, this.y, this.level);
@@ -1615,6 +1894,19 @@ var piece = function(x, y, type, variant, direction, player, level) {
           }
         }
       }
+      if (turn >= 7) {
+        if (this.composite.length < 5 && platforms.length > 0) {
+          for(var gong = 0; gong < platforms[0].grid.length; gong ++) {
+            for(var bong = 0; bong < platforms[0].grid[gong].length; bong ++) {
+              if (platforms[0].grid[gong][bong]) {
+                if (platforms[0].grid[gong][bong].type == "p2 base expansion") {
+                  this.composite.push(platforms[0].grid[gong][bong]);
+                }
+              }
+            }
+          }
+        }
+      }
       ctx.fillStyle = "rgb(60, 130, 190)";
       ctx.fillRect(x * sf, (y + 3) * sf, 22 * sf, 19 * sf);
       ctx.fillStyle = "rgb(50, 180, 225)";
@@ -1630,7 +1922,7 @@ var piece = function(x, y, type, variant, direction, player, level) {
       ctx.stroke();
     }
   } else if (this.type == "tree") {
-    this.health = 4;
+    this.health = 3;
     this.resources = ["organic matter", "organic matter", "organic matter", "organic matter"];
 
 
@@ -1648,7 +1940,7 @@ var piece = function(x, y, type, variant, direction, player, level) {
       ctx.fill();
     };
   } else if (this.type == "rock") {
-    this.health = 4;
+    this.health = 3;
     this.resources = ["stone", "stone", "stone", "stone"];
 
 
@@ -1669,7 +1961,7 @@ var piece = function(x, y, type, variant, direction, player, level) {
       ctx.fill();
     };
   } else if (this.type == "gold") {
-    this.health = 5;
+    this.health = 3;
     this.resources = ["gold", "gold", "gold"];
 
 
@@ -1761,11 +2053,13 @@ var piece = function(x, y, type, variant, direction, player, level) {
 
       if (this.inventory.length < this.inventorySize && this.energy > 0) {
         console.log(this.eblock)
-        if (this.eblock.resources) {
-          if (this.eblock.resources.length > 0) {
-            this.energy --;
-            var i = this.eblock.resources.pop();
-            this.inventory.push(i);
+        if (this.eblock) {
+          if (this.eblock.resources != undefined) {
+            if (this.eblock.resources.length > 0) {
+              this.energy --;
+              var i = this.eblock.resources.pop();
+              this.inventory.push(i);
+            }
           }
         }
       }
@@ -2428,7 +2722,6 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasEot = true;
     this.hasDoneEot = false;
     this.eot = function() {
-      this.hasDoneEot = true;
       if (this.inventory.length > 0) {
         var t = 0;
         if (this.direction == "up") {
@@ -2552,6 +2845,17 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.rotOffset = 0;
     this.nextDrop = "stone";
     this.turnProgress = 0;
+
+    this.pushItem = function(item) {
+    if (this.composite.length) {
+      if (this.composite[0].inventory.length < this.composite[0].inventorySize) {
+        this.composite[0].inventory.push(item);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
 
 
 
@@ -2720,7 +3024,15 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.inventorySize = 3;
     this.hasCompositeInventory = true;
 
-
+    this.pushItem = function(item) {
+      if (this.inventory) {
+        if (this.inventory.length < this.inventorySize) {
+          this.inventory.push(item);
+          return true;
+        }
+      }
+      return false;
+    }
 
 
     this.compositeInventoryPush = function(input) {
@@ -2803,6 +3115,8 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.isComposite = true;
     this.hasCompositeInventory = false;
     this.composite = [];
+
+
     this.compositeIndex = {
       input: null,
       output: null
@@ -4311,7 +4625,10 @@ var piece = function(x, y, type, variant, direction, player, level) {
     };
   } else if (this.type == "artillery") {
     this.health = 6; // 6
-    this.inventory = ["alloy", "alloy", "alloy", "alloy"];
+    this.inventory = ["alloy"];
+    if (devMode) {
+      this.inventory = ["alloy", "alloy", "alloy", "alloy", "alloy", "alloy", "alloy", "alloy", "alloy", "alloy"];
+    }
     this.inventorySize = 4;
     this.isComposite = true;
     this.hasAction = true;
@@ -4512,6 +4829,18 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasCompositeHealth = true;
     this.inventory = [];
     this.inventorySize = 3;
+
+    this.pushItem = function(item) {
+    if (this.pointer) {
+      if (this.pointer.inventory.length < this.pointer.inventorySize) {
+        this.pointer.inventory.push(item);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+    
     this.compositeTakeDamage = function(dmg) {
       if (this.pointer) {
         this.pointer.compositeTakeDamage(dmg);
@@ -4573,6 +4902,18 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.isComposite = true;
     this.inventory = [];
     this.inventorySize = 3;
+
+    this.pushItem = function(item) {
+    if (this.pointer) {
+      if (this.pointer.inventory.length < this.pointer.inventorySize) {
+        this.pointer.inventory.push(item);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
+
     this.compositeTakeDamage = function(dmg) {
       if (this.pointer) {
         this.pointer.compositeTakeDamage(dmg);
@@ -4624,8 +4965,62 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.hasAction = true;
     
     this.draw = function(x, y) {
-      ctx.fillStyle = "rgb(140, 230, 255)";
+      
+      ctx.fillStyle = "rgb(80, 170, 240)";
       ctx.fillRect((x + 2) * sf, (y + 2) * sf, 21 * sf, 21 * sf);
+      ctx.fillStyle = "rgb(5, 20, 80)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5) * sf, (y + 17.5) * sf, 2.4 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 6) * sf, (y + 14.5) * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 19) * sf, (y + 14.5) * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.strokeStyle = "rgb(5, 20, 80)";
+      ctx.lineWidth = 1 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 6) * sf, (y + 14.5) * sf);
+      ctx.lineTo((x + 6) * sf, (y + 20) * sf);
+      ctx.lineTo((x + 12.5) * sf, (y + 17.5) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 20) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 14.5) * sf);
+      ctx.stroke();
+
+      var a = 0;
+      if (this.direction == "up") {
+        a = Math.PI * -0.5;
+      } else if (this.direction == "down") {
+        a = Math.PI * 0.5;
+      } else if (this.direction == "left") {
+        a = Math.PI;
+      }
+      
+      var s = {x: 12.5, y: 14.5}
+      var angles = [a - Math.PI * 0.3, a - Math.PI * 0.15, a, a + Math.PI * 0.15, a + Math.PI * 0.3];
+
+      ctx.fillStyle = "rgb(5, 20, 80)";
+
+      for(var gong = 0; gong < angles.length; gong ++) {
+        var start = {x: s.x + Math.cos(angles[gong]) * 2.5 + x, y: s.y + Math.sin(angles[gong]) * 2.5 + y};
+        var end = {x: s.x + Math.cos(angles[gong]) * 7.5 + x, y: s.y + Math.sin(angles[gong]) * 7.5 + y}
+        var a = Math.atan2(end.y - start.y, end.x - start.x);
+        var w = 1;
+        var b = 3;
+        var p = 4;
+        ctx.beginPath();
+        ctx.moveTo((start.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+        ctx.lineTo((start.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * b) * sf);
+        ctx.lineTo((end.x + Math.cos(a) * p) * sf, (end.y + Math.sin(a) * p) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * b) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+        ctx.fill();
+      }
+
+
     }
 
     this.action = function() {
@@ -4818,7 +5213,7 @@ var piece = function(x, y, type, variant, direction, player, level) {
       }
     };
     this.healAll = function() {
-      var targets = [accessPoint(this.x - 1, this.y - 1), accessPoint(this.x - 1, this.y), accessPoint(this.x - 1, this.y + 1), accessPoint(this.x, this.y + 1), accessPoint(this.x + 1, this.y + 1), accessPoint(this.x + 1, this.y), accessPoint(this.x + 1, this.y - 1), accessPoint(this.x, this.y - 1)];
+      var targets = [accessPoint(this.x - 1, this.y), accessPoint(this.x, this.y + 1), accessPoint(this.x + 1, this.y), accessPoint(this.x, this.y - 1)];
       for(var gong = 0; gong < targets.length; gong ++) {
         if (targets[gong]) {
           targets[gong].takeDamage(-1);
@@ -4831,10 +5226,11 @@ var piece = function(x, y, type, variant, direction, player, level) {
   } else if (this.type == "woodcutter body") {
     this.isComposite = true;
     this.hasCompositeHealth = true;
-    this.hasCompositeInventory = false;
+    this.hasCompositeInventory = true;
     this.composite = [];
     this.inventory = [];
-    this.inventorySize = 2;
+    this.inventorySize = 4;
+    this.energy = 0;
 
     this.compositeTakeDamage = function(dmg) {
       if (this.composite.length > 0) {
@@ -4849,13 +5245,15 @@ var piece = function(x, y, type, variant, direction, player, level) {
       if (this.inventory.length > 0) {
         return(this.inventory.pop());
       }
-      if (this.composite.length > 0) {
-        if (this.composite[0].inventory.length > 0) {
-          return(this.composite[0].inventory.pop());
-        }
-      }
       return(false);
     };
+    this.compositeInventoryPush = function(item) {
+      if (this.inventory.length < this.inventorySize) {
+        this.inventory.push(item);
+        return(true);
+      }
+      return(false);
+    }
     this.compositeDeath = function() {
       if (this.composite.length) {
         var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
@@ -4865,13 +5263,32 @@ var piece = function(x, y, type, variant, direction, player, level) {
       t.platform.grid[t.x - 1][t.y - 1] = 0;
     };
 
+    this.hasEot = true;
+    this.hasDoneEot = false;
+    this.eot = function() {
+      this.hasDoneEot = true;
+
+      for(var gong = 0; gong < this.inventory.length; gong ++) {
+        if (this.inventory[gong] == "energy") {
+          this.energy ++;
+          this.inventory.splice(gong, 1);
+          gong --;
+        }
+      }
+
+    };
+
+    this.eotDraw = function(x, y) {
+
+    }
+
     this.draw = function(x, y) {
       if (this.composite.length == 0) {
-        var t = accessPoint(this.x - 1, this.y);
+        var t = accessPoint(this.x + 1, this.y);
         if (this.direction == "up") {
-          t = accessPoint(this.x, this.y + 1);
-        } else if (this.direction == "down") {
           t = accessPoint(this.x, this.y - 1);
+        } else if (this.direction == "down") {
+          t = accessPoint(this.x, this.y + 1);
         } else if (this.direction == "left") {
           t = accessPoint(this.x - 1, this.y);
         }
@@ -4933,15 +5350,22 @@ var piece = function(x, y, type, variant, direction, player, level) {
     this.health = 4;
     this.isComposite = true;
     this.hasCompositeHealth = true;
-    this.hasCompositeInventory = false;
+    this.hasCompositeInventory = true;
     this.composite = [];
     this.inventory = [];
     this.inventorySize = 4;
-    this.energy = 0;
-    this.hasAction = true;
     this.animOffset = 0;
 
-
+    this.pushItem = function(item) {
+    if (this.composite.length) {
+      if (this.composite[0].inventory.length < this.composite[0].inventorySize) {
+        this.composite[0].inventory.push(item);
+        return true;
+      }
+    } else {
+      return false;
+    }
+  }
 
     this.compositeTakeDamage = function(dmg) {
       this.health -= dmg;
@@ -4951,19 +5375,25 @@ var piece = function(x, y, type, variant, direction, player, level) {
     };
     //Mark: hehe done :3
     this.returnInventory = function() {
-      return(this.inventory)
+      if (this.composite.length > 0) {
+        return(this.composite[0].inventory);
+      }
     };
     this.compositeSiphon = function() {
-      if (this.inventory.length > 0) {
-        return(this.inventory.pop());
-      }
       if (this.composite.length > 0) {
-        if (this.composite[0].inventory.length > 0) {
-          return(this.composite[0].inventory.pop());
-        }
+        return(this.composite[0].inventory.pop());
       }
       return(false);
     };
+    this.compositeInventoryPush = function(item) {
+      if (this.composite.length > 0) {
+        if (this.composite[0].inventory.length < this.composite[0].inventorySize) {
+          this.composite[0].inventory.push(item);
+          return(true);
+        }
+      }
+      return(false);
+    }
     this.compositeDeath = function() {
       if (this.composite.length) {
         var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
@@ -4972,6 +5402,44 @@ var piece = function(x, y, type, variant, direction, player, level) {
       var t = getCoordsOnPlatform(this.x, this.y);
       t.platform.grid[t.x - 1][t.y - 1] = 0;
     };
+
+    this.hasEot = true;
+    this.hasDoneEot = false;
+    this.eot = function() {
+      if (this.composite.length > 0) {
+        var c = this.composite[0];
+      
+        if (c.energy > 0) {
+          c.energy --;
+          for(var gong = 0; gong < c.inventory.length; gong ++) {
+            if (c.inventory[gong] == "organic matter") {
+              c.compositeInventoryPush("organic matter");
+              break;
+            }
+          }
+
+          var t = accessPoint(this.x + 1, this.y);
+          if (this.direction == "up") {
+            t = accessPoint(this.x, this.y - 1);
+          } else 
+          if (this.direction == "down") {
+            t = accessPoint(this.x, this.y + 1);
+          } else if (this.direction == "left") {
+            t = accessPoint(this.x - 1, this.y);
+          }
+
+          if (t) {
+            if (t.health) {
+              t.takeDamage(2);
+            }
+          }
+
+        }
+      }
+    };
+    this.eotDraw = function(x, y) {
+      this.animOffset += 0.15;
+    }
 
     this.draw = function(x, y) {
       this.animOffset += 0.2;
@@ -5103,6 +5571,640 @@ var piece = function(x, y, type, variant, direction, player, level) {
         ctx.stroke();
       }
     }
+  } else if (this.type == "polluter input") {
+    this.health = 3;
+    this.isComposite = true;
+    this.hasCompositeHealth = true;
+    this.composite = [];
+    this.inventory = [];
+    this.inventorySize = 4;
+
+    this.compositeTakeDamage = function(dmg) {
+      this.health -= dmg;
+      if (this.health <= 0) {
+        this.compositeDeath();
+      }
+    };
+    //Mark: hehe done :3
+    this.returnInventory = function() {
+      return(this.inventory);
+    };
+    this.compositeSiphon = function() {
+      if (this.inventory.length > 0) {
+        return(this.inventory.pop());
+      }
+      return(false);
+    };
+    this.compositeInventoryPush = function(item) {
+      if (this.inventory.length < this.inventorySize) {
+        this.inventory.push(item);
+        return(true);
+      }
+      return(false);
+    }
+    this.compositeDeath = function() {
+      if (this.composite.length) {
+        var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
+        t.platform.grid[t.x - 1][t.y - 1] = 0;
+      }
+      var t = getCoordsOnPlatform(this.x, this.y);
+      t.platform.grid[t.x - 1][t.y - 1] = 0;
+    };
+
+    this.draw = function(x, y) {
+      if (this.composite.length == 0) {
+        var t = accessPoint(this.x + 1, this.y);
+        if (this.direction == "up") {
+          t = accessPoint(this.x, this.y - 1);
+        } else if (this.direction == "down") {
+          t = accessPoint(this.x, this.y + 1);
+        } else if (this.direction == "left") {
+          t = accessPoint(this.x - 1, this.y);
+        }
+        if (t) {
+          if (t.type == "polluter stack") {
+            this.composite.push(t);
+          }
+        }
+      }
+
+      ctx.fillStyle = "rgb(150, 0, 0)";
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      var a = 0;
+      if (this.direction == "up") {
+        a = Math.PI * -0.5;
+      } else if (this.direction == "down") {
+        a = Math.PI * 0.5;
+      } else if (this.direction == "left") {
+        a = Math.PI;
+      }
+
+      ctx.strokeStyle = "rgb(75, 0, 0)";
+      ctx.lineWidth = 2.5 * sf;
+      var val = Math.sqrt(2) * 0.94;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a + Math.PI * 0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.25) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * 0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.25) * 12.5 * val) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgb(75, 0, 0)";
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 7) * sf, (y + 12.5 + Math.sin(a) * 7) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -4 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * -4 + Math.sin(a + Math.PI * 0.5) * 7) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -4 + Math.cos(a + Math.PI * -0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * -4 + Math.sin(a + Math.PI * -0.5) * 7) * sf);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgb(0, 0, 0)";
+      ctx.lineWidth = 4 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * -0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * -0.5) * 12.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * 0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * 0.5) * 12.5) * sf);
+      ctx.stroke();
+    };
+
+    this.hasEot = true;
+    this.hasDoneEot = false;
+    this.eot = function() {
+      this.hasDoneEot = true;
+      var sum = 0;
+      for(var gong = 0; gong < this.inventory.length; gong ++) {
+        if (this.inventory[gong] == "organic matter") {
+          sum ++;
+        }
+      }
+      if (sum >= 2) {
+        sum = 2;
+        for(var gong = 0; gong < this.inventory.length; gong ++) {
+          if (this.inventory[gong] == "organic matter") {
+            if (sum > 0) {
+              sum --;
+              this.inventory.splice(gong, 1);
+              gong --;
+            } else {
+              break;
+            }
+          }
+        }
+        for(var gong = 0; gong < 4; gong ++) {
+          if (this.composite.length) {
+            if (this.composite[0].inventory.length < this.composite[0].inventorySize) {
+              this.composite[0].inventory.push("energy");
+            }
+          }
+        }
+      }
+    };
+
+    this.eotDraw = function(x, y) {
+      
+    }
+  } else if (this.type == "polluter stack") {
+    this.isComposite = true;
+    this.hasCompositeHealth = true;
+    this.composite = [];
+    this.inventory = [];
+    this.inventorySize = 4;
+    this.hasRouting = true;
+    this.currentRouting = [];
+    this.origins = [this];
+    this.targets = [{x: this.x, y: this.y - 1}, {x: this.x, y: this.y + 1}, {x: this.x - 1, y: this.y}, {x: this.x + 1, y: this.y}, {x: this.x + 1, y: this.y - 1}, {x: this.x + 1, y: this.y + 1}, {x: this.x - 1, y: this.y + 1}, {x: this.x - 1, y: this.y - 1}];
+    this.routeLimit = 4;
+
+    this.canAutoOut = true;
+    this.isAutoOut = false;
+    this.autoOutConfig = "right";
+
+    this.hasExpansionUpdate = true;
+    this.expansionUpdate = function() {
+      this.origins = [this];
+      this.targets = [{x: this.x, y: this.y - 1}, {x: this.x, y: this.y + 1}, {x: this.x - 1, y: this.y}, {x: this.x + 1, y: this.y}, {x: this.x + 1, y: this.y - 1}, {x: this.x + 1, y: this.y + 1}, {x: this.x - 1, y: this.y + 1}, {x: this.x - 1, y: this.y - 1}];
+    };
+    
+    this.compositeTakeDamage = function(dmg) {
+      if (this.composite.length) {
+        this.composite[0].compositeTakeDamage(dmg);
+      }
+    };
+    //Mark: hehe done :3
+    this.returnInventory = function() {
+      return(this.inventory);
+    };
+    this.compositeSiphon = function() {
+      if (this.inventory.length > 0) {
+        return(this.inventory.pop());
+      }
+      return(false);
+    };
+    this.compositeInventoryPush = function(item) {
+      if (this.inventory.length < this.inventorySize) {
+        this.inventory.push(item);
+        return(true);
+      }
+      return(false);
+    }
+    this.compositeDeath = function() {
+      if (this.composite.length) {
+        var t = getCoordsOnPlatform(this.composite[0].x, this.composite[0].y);
+        t.platform.grid[t.x - 1][t.y - 1] = 0;
+      }
+      var t = getCoordsOnPlatform(this.x, this.y);
+      t.platform.grid[t.x - 1][t.y - 1] = 0;
+    };
+
+    this.draw = function(x, y) {
+      if (this.composite.length == 0) {
+        var t = accessPoint(this.x + 1, this.y);
+        if (this.direction == "up") {
+          t = accessPoint(this.x, this.y - 1);
+        } else if (this.direction == "down") {
+          t = accessPoint(this.x, this.y + 1);
+        } else if (this.direction == "left") {
+          t = accessPoint(this.x - 1, this.y);
+        }
+        if (t) {
+          if (t.type == "polluter input") {
+            this.composite.push(t);
+          }
+        }
+      }
+
+      var a = 0;
+      if (this.direction == "up") {
+        a = Math.PI * -0.5;
+      } else if (this.direction == "down") {
+        a = Math.PI * 0.5;
+      } else if (this.direction == "left") {
+        a = Math.PI;
+      }
+
+      var g = ctx.createLinearGradient((x + 12.5 + Math.cos(a) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5) * sf, (x + 12.5 + Math.cos(a) * -12.5) * sf, (y + 12.5 + Math.sin(a) * -12.5) * sf);
+      g.addColorStop(0, "rgb(150, 0, 0)");
+      g.addColorStop(0.75, "rgb(50, 0, 0)");
+      g.addColorStop(1, "rgb(50, 0, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      ctx.strokeStyle = "rgb(0, 0, 0)";
+      ctx.lineWidth = 4 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * -0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * -0.5) * 12.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * 0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * 0.5) * 12.5) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(75, 0, 0)";
+      ctx.lineWidth = 2.5 * sf;
+      var val = Math.sqrt(2) * 0.94;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a + Math.PI * 0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.25) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * 0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.25) * 12.5 * val) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgb(170, 0, 0)";
+      ctx.beginPath();
+      ctx.moveTo((x + 5) * sf, (y + 16) * sf);
+      ctx.lineTo((x + 8) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 17) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 20) * sf, (y + 16) * sf);
+      ctx.fill();
+      ctx.strokeStyle = "rgb(100, 0, 0)";
+      ctx.lineWidth = 1.5 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 5) * sf, (y + 16) * sf);
+      ctx.lineTo((x + 8) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 17) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 20) * sf, (y + 16) * sf);
+      ctx.stroke();
+
+
+
+
+      ctx.fillStyle = "rgb(20, 60, 60)";
+      ctx.beginPath();
+      ctx.ellipse((x + 12.5) * sf, (y - 10) * sf, 4.5 * sf, 3 * sf, 0, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse((x + 12.5) * sf, (y - 10) * sf, 4.5 * sf, 3 * sf, 0, 0, Math.PI * 2, false);
+      ctx.stroke();
+    }
+
+    this.hasEot = true;
+    this.hasDoneEot = false;
+    this.eot = function() {
+      this.hasDoneEot = true;
+      for (var gong = 0; gong < this.currentRouting.length; gong ++) {
+        var c = this.currentRouting[gong];
+        var inp = accessPoint(c.input.x, c.input.y);
+        var out = accessPoint(c.out.x, c.out.y);
+        if (out.inventory && inp.inventory) {
+          if (out.inventory.length && inp.inventory.length < inp.inventorySize) {
+            inp.pushItem(out.inventory.pop());
+          }
+        }
+      }
+      this.currentRouting = [];
+    };
+    this.eotDraw = function(x, y) {
+
+    };
+  } else if (this.type == "p1 base expansion") {
+    this.isComposite = true;
+    this.isBase = true;
+    this.hasCompositeHealth = true;
+    this.composite = [];
+    this.baseStorage = 0;
+    this.baseInfo = 0;
+    this.hasCompositeInventory = true;
+    this.inventory = [];
+    this.inventorySize = 2;
+
+
+    this.compositeInventoryPush = function(item) {
+      if (this.baseStorage) {
+        if (this.baseStorage.inventory.length < this.baseStorage.inventorySize) {
+          this.baseStorage.inventory.push(item);
+          return true;
+        }
+      }
+      return false;
+    };
+    this.compositeTakeDamage = function(dmg) {
+      if (this.baseInfo) {
+        this.baseInfo.takeDamage(dmg);
+      } else {
+        console.log("AAAAAAAAAAAAAAA")
+      }
+    };
+    this.compositeSiphon = function() {
+      if (this.baseStorage) {
+        if (this.baseStorage.inventory.length) {
+          return this.baseStorage.inventory.pop();
+        }
+      }
+      return false;
+    };
+    this.compositeDeath = function() {
+      for (var gong = 0; gong < this.composite.length; gong++) {
+        var t = getCoordsOnPlatform(this.composite[gong].x, this.composite[gong].y);
+        console.log(t.type);
+        t.platform.grid[t.x - 1][t.y - 1] = 0;
+      }
+      var t = getCoordsOnPlatform(this.x, this.y);
+      t.platform.grid[t.x - 1][t.y - 1] = 0;
+    };
+
+    this.draw = function(x, y) {
+      if (this.baseInfo == 0) {
+        var t = accessPoint(this.variant.info.x, this.variant.info.y);
+        if (t) {
+          if (t.type == "p1 base info") {
+            this.baseInfo = t;
+            this.composite.push(t);
+          }
+        }
+      }
+      if (this.baseStorage == 0) {
+        var t = accessPoint(this.variant.storage.x, this.variant.storage.y);
+        if (t) {
+          if (t.type == "p1 base storage") {
+            this.baseStorage = t;
+            this.composite.push(t);
+          }
+        }
+      }
+      if (this.composite.length < 5) {
+        var l = [accessPoint(this.x - 1, this.y), accessPoint(this.x - 1, this.y + 1), accessPoint(this.x, this.y + 1)];
+        if (this.direction == "up") {
+          var l = [accessPoint(this.x + 1, this.y), accessPoint(this.x + 1, this.y + 1), accessPoint(this.x, this.y + 1)];
+        } else if (this.direction == "down") {
+          var l = [accessPoint(this.x - 1, this.y), accessPoint(this.x - 1, this.y - 1), accessPoint(this.x, this.y - 1)];
+        } else if (this.direction == "left") {
+          var l = [accessPoint(this.x + 1, this.y), accessPoint(this.x + 1, this.y - 1), accessPoint(this.x, this.y - 1)];
+        }
+        for(var gong = 0; gong < l.length; gong ++) {
+          if (l[gong].isBase) {
+            this.composite.push(l[gong]);
+          }
+        }
+        var possible = [{x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}, {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}];
+        for(var gong = 0; gong < possible.length; gong ++) {
+          var t = accessPoint(this.x + possible[gong].x, this.y + possible[gong].y, this.level);
+          if (t) {
+            if (t.isBase) {
+              this.composite.push(t);
+            }
+          }
+        }
+        console.log("still looking...")
+      }
+      ctx.fillStyle = "rgb(200, 30, 50)";
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      ctx.fillStyle = "rgb(160, 23, 35)";
+      if (this.direction == "up") {
+        ctx.fillRect((x + 8) * sf, (y + 8) * sf, 17 * sf, 17 * sf);
+      } else if (this.direction == "down") {
+        ctx.fillRect(x * sf, y * sf, 17 * sf, 17 * sf);
+      } else if (this.direction == "left") {
+        ctx.fillRect((x + 8) * sf, y * sf, 17 * sf, 17 * sf);
+      } else {
+        ctx.fillRect(x * sf, (y + 8) * sf, 17 * sf, 17 * sf);
+      }
+
+      ctx.fillStyle = "rgb(100, 10, 0)";
+      var a = accessPoint(this.x, this.y - 1, this.level)
+      if (a) {
+        var a1 = !a.isBase;
+        if (!a.isBase) { 
+          ctx.fillRect(x * sf, y * sf, 25 * sf, 2 * sf);
+        }
+      } else {
+        ctx.fillRect(x * sf, y * sf, 25 * sf, 2 * sf);
+      }
+      var b = accessPoint(this.x, this.y + 1, this.level)
+      if (b) {
+        var b1 = !b.isBase;
+        if (!b.isBase) { 
+          ctx.fillRect(x * sf, (y + 23) * sf, 25 * sf, 2 * sf);
+        }
+      } else {
+        ctx.fillRect(x * sf, (y + 23) * sf, 25 * sf, 2 * sf);
+      }
+      var c = accessPoint(this.x - 1, this.y, this.level)
+      if (c) {
+        var c1 = !c.isBase;
+        if (!c.isBase) { 
+          ctx.fillRect(x * sf, y * sf, 2 * sf, 25 * sf);
+        }
+      } else {
+        ctx.fillRect(x * sf, y * sf, 2 * sf, 25 * sf);
+      }
+      var d = accessPoint(this.x + 1, this.y, this.level)
+      if (d) {
+        var d1 = !d.isBase;
+        if (!d.isBase) { 
+          ctx.fillRect((x + 23) * sf, y * sf, 2 * sf, 25 * sf);
+        }
+      } else {
+        ctx.fillRect((x + 23) * sf, y * sf, 2 * sf, 25 * sf);
+      }
+      //diagonal
+      var o = accessPoint(this.x - 1, this.y - 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && a1 && c1) {
+        ctx.fillRect(x * sf, y * sf, 3 * sf, 3 * sf);
+      }
+      var o = accessPoint(this.x + 1, this.y - 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && a1 && d1) {
+        ctx.fillRect((x + 22) * sf, y * sf, 3 * sf, 3 * sf);
+      }
+      var o = accessPoint(this.x + 1, this.y + 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && b1 && d1) {
+        ctx.fillRect((x + 22) * sf, (y + 22) * sf, 3 * sf, 3 * sf);
+      }
+      var o = accessPoint(this.x - 1, this.y + 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && b1 && c1) {
+        ctx.fillRect(x * sf, (y + 22) * sf, 3 * sf, 3 * sf);
+      }
+    }
+  } else if (this.type == "p2 base expansion") {
+    this.isComposite = true;
+    this.isBase = true;
+    this.hasCompositeHealth = true;
+    this.composite = [];
+    this.baseStorage = 0;
+    this.baseInfo = 0;
+    this.hasCompositeInventory = true;
+    this.inventory = [];
+    this.inventorySize = 2;
+
+
+    this.compositeInventoryPush = function(item) {
+      if (this.baseStorage) {
+        if (this.baseStorage.inventory.length < this.baseStorage.inventorySize) {
+          this.baseStorage.inventory.push(item);
+          return true;
+        }
+      }
+      return false;
+    };
+    this.compositeTakeDamage = function(dmg) {
+      if (this.baseInfo) {
+        this.baseInfo.takeDamage(dmg);
+      }
+    };
+    this.compositeSiphon = function() {
+      if (this.baseStorage) {
+        if (this.baseStorage.inventory.length) {
+          return this.baseStorage.inventory.pop();
+        }
+      }
+      return false;
+    };
+    this.compositeDeath = function() {
+      for (var gong = 0; gong < this.composite.length; gong++) {
+        var t = getCoordsOnPlatform(this.composite[gong].x, this.composite[gong].y);
+        t.platform.grid[t.x - 1][t.y - 1] = 0;
+      }
+      var t = getCoordsOnPlatform(this.x, this.y);
+      t.platform.grid[t.x - 1][t.y - 1] = 0;
+    };
+
+    this.draw = function(x, y) {
+      if (this.baseInfo == 0) {
+        var t = accessPoint(this.variant.info.x, this.variant.info.y);
+        if (t) {
+          if (t.type == "p2 base info") {
+            this.baseInfo = t;
+            this.composite.push(t);
+          }
+        }
+      }
+      if (this.baseStorage == 0) {
+        var t = accessPoint(this.variant.storage.x, this.variant.storage.y);
+        if (t) {
+          if (t.type == "p2 base storage") {
+            this.baseStorage = t;
+            this.composite.push(t);
+          }
+        }
+      }
+      if (this.composite.length == 0) {
+        var l = [accessPoint(this.x - 1, this.y), accessPoint(this.x - 1, this.y + 1), accessPoint(this.x, this.y + 1)];
+        if (this.direction == "up") {
+          var l = [accessPoint(this.x + 1, this.y), accessPoint(this.x + 1, this.y + 1), accessPoint(this.x, this.y + 1)];
+        } else if (this.direction == "down") {
+          var l = [accessPoint(this.x - 1, this.y), accessPoint(this.x - 1, this.y - 1), accessPoint(this.x, this.y - 1)];
+        } else if (this.direction == "left") {
+          var l = [accessPoint(this.x + 1, this.y), accessPoint(this.x + 1, this.y - 1), accessPoint(this.x, this.y - 1)];
+        }
+        for(var gong = 0; gong < l.length; gong ++) {
+          if (l[gong].isBase) {
+            this.composite.push(l[gong]);
+          }
+        }
+
+      }
+      ctx.fillStyle = "rgb(60, 130, 190)";
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      ctx.fillStyle = "rgb(40, 95, 155)";
+      if (this.direction == "up") {
+        ctx.fillRect((x + 8) * sf, (y + 8) * sf, 17 * sf, 17 * sf);
+      } else if (this.direction == "down") {
+        ctx.fillRect(x * sf, y * sf, 17 * sf, 17 * sf);
+      } else if (this.direction == "left") {
+        ctx.fillRect((x + 8) * sf, y * sf, 17 * sf, 17 * sf);
+      } else {
+        ctx.fillRect(x * sf, (y + 8) * sf, 17 * sf, 17 * sf);
+      }
+
+      ctx.fillStyle = "rgb(30, 65, 95)";
+      var a = accessPoint(this.x, this.y - 1, this.level)
+      if (a) {
+        var a1 = !a.isBase;
+        if (!a.isBase) { 
+          ctx.fillRect(x * sf, y * sf, 25 * sf, 2 * sf);
+        }
+      } else {
+        ctx.fillRect(x * sf, y * sf, 25 * sf, 2 * sf);
+      }
+      var b = accessPoint(this.x, this.y + 1, this.level)
+      if (b) {
+        var b1 = !b.isBase;
+        if (!b.isBase) { 
+          ctx.fillRect(x * sf, (y + 23) * sf, 25 * sf, 2 * sf);
+        }
+      } else {
+        ctx.fillRect(x * sf, (y + 23) * sf, 25 * sf, 2 * sf);
+      }
+      var c = accessPoint(this.x - 1, this.y, this.level)
+      if (c) {
+        var c1 = !c.isBase;
+        if (!c.isBase) { 
+          ctx.fillRect(x * sf, y * sf, 2 * sf, 25 * sf);
+        }
+      } else {
+        ctx.fillRect(x * sf, y * sf, 2 * sf, 25 * sf);
+      }
+      var d = accessPoint(this.x + 1, this.y, this.level)
+      if (d) {
+        var d1 = !d.isBase;
+        if (!d.isBase) { 
+          ctx.fillRect((x + 23) * sf, y * sf, 2 * sf, 25 * sf);
+        }
+      } else {
+        ctx.fillRect((x + 23) * sf, y * sf, 2 * sf, 25 * sf);
+      }
+      //diagonal
+      var o = accessPoint(this.x - 1, this.y - 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && a1 && c1) {
+        ctx.fillRect(x * sf, y * sf, 3 * sf, 3 * sf);
+      }
+      var o = accessPoint(this.x + 1, this.y - 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && a1 && d1) {
+        ctx.fillRect((x + 22) * sf, y * sf, 3 * sf, 3 * sf);
+      }
+      var o = accessPoint(this.x + 1, this.y + 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && b1 && d1) {
+        ctx.fillRect((x + 22) * sf, (y + 22) * sf, 3 * sf, 3 * sf);
+      }
+      var o = accessPoint(this.x - 1, this.y + 1, this.level);
+      var t = false;
+      if (o) {
+        if (o.isBase) {
+          t = true;
+        }
+      }
+      if (!t && b1 && c1) {
+        ctx.fillRect(x * sf, (y + 22) * sf, 3 * sf, 3 * sf);
+      }
+    }
   }
 
 
@@ -5154,6 +6256,142 @@ piece.prototype.die = function() {
     r.platform.grid[r.x - 1][r.y - 1] = 0;
   }
 };
+
+var under = function(x, y, type, player, level) {
+  this.x = x;
+  this.y = y;
+  this.type = type;
+  this.player = player;
+  this.level = level;
+
+  if (this.type == "pipework") {
+    this.health = 2;
+    this.inventory = [];
+    this.inventorySize = 1;
+    
+    this.draw = function(x, y) {
+      ctx.fillStyle = "rgb(150, 150, 150)";
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      ctx.strokeStyle = "rgb(0, 0, 0)";
+      ctx.lineWidth = 4.5 * sf;
+      ctx.beginPath();
+      ctx.moveTo(x * sf, (y + 13) * sf);
+      ctx.lineTo((x + 25) * sf, (y + 13) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(100, 100, 100)";
+      ctx.lineWidth = 3 * sf;
+      ctx.beginPath();
+      ctx.moveTo(x * sf, (y + 13) * sf);
+      ctx.lineTo((x + 25) * sf, (y + 13) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(0, 0, 0)";
+      ctx.lineWidth = 4.5 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 19) * sf, (y + 25) * sf);
+      ctx.lineTo((x + 19) * sf, y * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(100, 100, 100)";
+      ctx.lineWidth = 3 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 19) * sf, (y + 25) * sf);
+      ctx.lineTo((x + 19) * sf, y * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(0, 0, 0)";
+      ctx.lineWidth = 6 * sf;
+      ctx.beginPath();
+      ctx.moveTo(x * sf, (y + 18) * sf);
+      ctx.lineTo((x + 6) * sf, (y + 18) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 9) * sf);
+      ctx.lineTo((x + 25) * sf, (y + 9) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(100, 100, 100)";
+      ctx.lineWidth = 4.5 * sf;
+      ctx.beginPath();
+      ctx.moveTo(x * sf, (y + 18) * sf);
+      ctx.lineTo((x + 6) * sf, (y + 18) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 9) * sf);
+      ctx.lineTo((x + 25) * sf, (y + 9) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(0, 0, 0)";
+      ctx.lineWidth = 5.25 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 4) * sf, (y + 25) * sf);
+      ctx.lineTo((x + 4) * sf, (y + 10) * sf);
+      ctx.lineTo((x + 15) * sf, (y + 4) * sf);
+      ctx.lineTo((x + 15) * sf, y * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(100, 100, 100)";
+      ctx.lineWidth = 3.75 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 4) * sf, (y + 25) * sf);
+      ctx.lineTo((x + 4) * sf, (y + 10) * sf);
+      ctx.lineTo((x + 15) * sf, (y + 4) * sf);
+      ctx.lineTo((x + 15) * sf, y * sf);
+      ctx.stroke();
+
+      // for(var gong = 0; gong < thingles.length; gong ++) {
+      //   var ex = x + 12.5;
+      //   var ey = y + 12.5;
+      //   ctx.fillStyle = "rgb(100, 100, 100)";
+      //   ctx.beginPath();
+      //   ctx.moveTo((ex + Math.cos(thingles[gong]) * 12.5 + Math.cos(thingles[gong] + Math.PI * -0.5) * 12.5) * sf, (ey + Math.sin(thingles[gong]) * 12.5 + Math.sin(thingles[gong] + Math.PI * -0.5) * 12.5) * sf);
+      //   for(var pong = 0; pong < 10; pong ++) {
+      //     var o = 3;
+      //     if (pong % 2 == 1) {
+      //       o = 1;
+      //     }
+      //     ctx.lineTo((ex + Math.cos(thingles[gong]) * (12.5 + o) + Math.cos(thingles[gong] + Math.PI * -0.5) * (12.5 - (pong * 2.5))) * sf, (ey + Math.sin(thingles[gong]) * (12.5 + o) + Math.sin(thingles[gong] + Math.PI * -0.5) * (12.5 - (pong * 2.5))) * sf);
+      //   }
+      //   ctx.lineTo((ex + Math.cos(thingles[gong]) * 12.5 + Math.cos(thingles[gong] + Math.PI * 0.5) * 12.5) * sf, (ey + Math.sin(thingles[gong]) * 12.5 + Math.sin(thingles[gong] + Math.PI * 0.5) * 12.5) * sf);
+      //   ctx.fill();
+      // }
+      ctx.fillStyle = "rgb(60, 60, 60)";
+      //cardinal
+      var a = accessUnder(this.x, this.y - 1, this.level)
+      if (!a) {
+        ctx.fillRect(x * sf, y * sf, 25 * sf, 3 * sf);
+      }
+      var b = accessUnder(this.x, this.y + 1, this.level)
+      if (!b) {
+        ctx.fillRect(x * sf, (y + 22) * sf, 25 * sf, 3 * sf);
+      }
+      var c = accessUnder(this.x - 1, this.y, this.level)
+      if (!c) {
+        ctx.fillRect(x * sf, y * sf, 3 * sf, 25 * sf);
+      }
+      var d = accessUnder(this.x + 1, this.y, this.level)
+      if (!d) {
+        ctx.fillRect((x + 22) * sf, y * sf, 3 * sf, 25 * sf);
+      }
+      //diagonal
+      var t = accessUnder(this.x - 1, this.y - 1, this.level)
+      if (!t && a && c) {
+        ctx.fillRect(x * sf, y * sf, 3 * sf, 3 * sf);
+      }
+      var t = accessUnder(this.x + 1, this.y - 1, this.level)
+      if (!t && a && d) {
+        ctx.fillRect((x + 22) * sf, y * sf, 3 * sf, 3 * sf);
+      }
+      var t = accessUnder(this.x + 1, this.y + 1, this.level)
+      if (!t && b && d) {
+        ctx.fillRect((x + 22) * sf, (y + 22) * sf, 3 * sf, 3 * sf);
+      }
+      var t = accessUnder(this.x - 1, this.y + 1, this.level)
+      if (!t && b && c) {
+        ctx.fillRect(x * sf, (y + 22) * sf, 3 * sf, 3 * sf);
+      }
+    }
+  }
+
+}
 
 var projs = [];
 var proj = function(x, y, dmg, type, level, other) {
@@ -5360,9 +6598,10 @@ var endTurn = function() {
         var p = p2;
       }
       if (turn == 3) {
-        pickOptions = pickRandomInArray(p.t1pool.eco, 2);
+        pickOptions = pickRandomInArray(p.t1pool.eco, 3);
         pickOptionsPointer = p.t1pool.eco;
         p.shopPool.push("jumper");
+        p.shopPool.push("polluter");
         isPicking = true;
       }
       if (turn == 4) {
@@ -5371,22 +6610,25 @@ var endTurn = function() {
         isPicking = true;
       }
       if (turn == 5) {
-        pickOptions = pickRandomInArray(p.t1pool.eco, 2);
+        pickOptions = pickRandomInArray(p.t1pool.eco, 3);
         pickOptionsPointer = p.t1pool.eco;
         p.shopPool.push("passive healer");
         p.shopPool.push("alloy healer");
+        p.shopPool.push("firing array bp");
         isPicking = true;
       }
       if (turn == 6) {
         pickOptions = pickRandomInArray(p.t1pool.weapon, 2);
         pickOptionsPointer = p.t1pool.weapon;
-        p.shopPool.push("firing array bp");
         isPicking = true;
+        isPulsing = true;
       }
       if (turn == 7) {
         pickOptions = pickRandomInArray(p.t2pool.weapon, 3);
         pickOptionsPointer = p.t2pool.weapon;
         isPicking = true;
+        isSplitting = true;
+        isPulsing = false;
       }
       if (turn == 8) {
         pickOptions = pickRandomInArray(p.t2pool.eco, 1);
@@ -5408,7 +6650,12 @@ var endTurn = function() {
               if (platforms[i].grid[j][k].hasEot) {
                 platforms[i].grid[j][k].hasDoneEot = false;
               }
-              if (platforms[i].grid[j][k].player == activePlayer && platforms[i].grid[j][k].isRepackaging) {
+              if (platforms[i].grid[j][k].isRepackaging) {
+                if (platforms[i].grid[j][k].player == 1) {
+                  p = p1;
+                } else {
+                  p = p2;
+                }
                 var found = false;
                 for(var l = 0; l < p.items.length; l++) {
                   if (p.items[l].item == platforms[i].grid[j][k].type) {
@@ -6486,7 +7733,8 @@ var ghost = function(x, y, type, variant, rotation) {
       ctx.fillStyle = "rgba(80, 80, 80, 0.5)";
       ctx.beginPath();
       ctx.moveTo((x + 12.5 + Math.cos(a) * 4.5 + Math.cos(a + Math.PI * -0.5) * 2.5) * sf, (y + 12.5 + Math.sin(a) * 4.5 + Math.sin(a + Math.PI * -0.5) * 2.5) * sf);
-      ctx.lineTo((x + 12.5 + Math.cos(a) * 4.5 + Math.cos(a + Math.PI * 0.5) * 2.5) * sf, (y + 12.5 + Math.sin(a) * 4.5 + Math.sin(a + Math.PI * 0.5) * 2.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * 4.5 + Math.cos(a + Math.PI * 0.5) * 2.5) * sf, (y + 12.5 + Math.sin(a) * 4.5 + Math.sin(a + Math.PI * 0.5) * 2.5) * 
+sf);
       ctx.lineTo((x + 12.5 + Math.cos(a) * 7.5 + Math.cos(a + Math.PI * 0.5) * 4.5) * sf, (y + 12.5 + Math.sin(a) * 7.5 + Math.sin(a + Math.PI * 0.5) * 4.5) * sf);
       ctx.lineTo((x + 12.5 + Math.cos(a) * 10.5) * sf, (y + 12.5 + Math.sin(a) * 10.5) * sf);
       ctx.lineTo((x + 12.5 + Math.cos(a) * 7.5 + Math.cos(a + Math.PI * -0.5) * 4.5) * sf, (y + 12.5 + Math.sin(a) * 7.5 + Math.sin(a + Math.PI * -0.5) * 4.5) * sf);
@@ -6494,7 +7742,8 @@ var ghost = function(x, y, type, variant, rotation) {
       ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
       ctx.lineWidth = 1.5 * sf;
       ctx.beginPath();
-      ctx.moveTo((x + 12.5 + Math.cos(a) * 4.5 + Math.cos(a + Math.PI * -0.5) * 2.5) * sf, (y + 12.5 + Math.sin(a) * 4.5 + Math.sin(a + Math.PI * -0.5) * 2.5) * sf);
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 4.5 +
+ Math.cos(a + Math.PI * -0.5) * 2.5) * sf, (y + 12.5 + Math.sin(a) * 4.5 + Math.sin(a + Math.PI * -0.5) * 2.5) * sf);
       ctx.lineTo((x + 12.5 + Math.cos(a) * 4.5 + Math.cos(a + Math.PI * 0.5) * 2.5) * sf, (y + 12.5 + Math.sin(a) * 4.5 + Math.sin(a + Math.PI * 0.5) * 2.5) * sf);
       ctx.lineTo((x + 12.5 + Math.cos(a) * 7.5 + Math.cos(a + Math.PI * 0.5) * 4.5) * sf, (y + 12.5 + Math.sin(a) * 7.5 + Math.sin(a + Math.PI * 0.5) * 4.5) * sf);
       ctx.lineTo((x + 12.5 + Math.cos(a) * 10.5) * sf, (y + 12.5 + Math.sin(a) * 10.5) * sf);
@@ -6696,6 +7945,279 @@ var ghost = function(x, y, type, variant, rotation) {
       ctx.moveTo((x + 7) * sf, (y + 12.5) * sf);
       ctx.lineTo((x + 18) * sf, (y + 12.5) * sf);
       ctx.stroke();
+  } else if (type == "firing array bp") {
+      ctx.fillStyle = "rgba(80, 170, 240, 0.5)";
+      ctx.fillRect((x + 2) * sf, (y + 2) * sf, 21 * sf, 21 * sf);
+      ctx.fillStyle = "rgba(5, 20, 80, 0.5)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5) * sf, (y + 17.5) * sf, 2.4 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 6) * sf, (y + 14.5) * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 19) * sf, (y + 14.5) * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.strokeStyle = "rgb(5, 20, 80, 0.5)";
+      ctx.lineWidth = 1 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 6) * sf, (y + 14.5) * sf);
+      ctx.lineTo((x + 6) * sf, (y + 20) * sf);
+      ctx.lineTo((x + 12.5) * sf, (y + 17.5) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 20) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 14.5) * sf);
+      ctx.stroke();
+
+      var a = 0;
+      if (rotation == "up") {
+        a = Math.PI * -0.5;
+      } else if (rotation == "down") {
+        a = Math.PI * 0.5;
+      } else if (rotation == "left") {
+        a = Math.PI;
+      }
+      
+      var s = {x: 12.5, y: 14.5}
+      var angles = [a - Math.PI * 0.3, a - Math.PI * 0.15, a, a + Math.PI * 0.15, a + Math.PI * 0.3];
+
+      ctx.fillStyle = "rgb(5, 20, 80, 0.5)";
+
+      for(var gong = 0; gong < angles.length; gong ++) {
+        var start = {x: s.x + Math.cos(angles[gong]) * 2.5 + x, y: s.y + Math.sin(angles[gong]) * 2.5 + y};
+        var end = {x: s.x + Math.cos(angles[gong]) * 7.5 + x, y: s.y + Math.sin(angles[gong]) * 7.5 + y}
+        var a = Math.atan2(end.y - start.y, end.x - start.x);
+        var w = 1;
+        var b = 3;
+        var p = 4;
+        ctx.beginPath();
+        ctx.moveTo((start.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+        ctx.lineTo((start.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * b) * sf);
+        ctx.lineTo((end.x + Math.cos(a) * p) * sf, (end.y + Math.sin(a) * p) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * b) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+        ctx.fill();
+      }
+  } else if (type == "woodcutter saw") {
+    var r = 10;
+      var a = Math.PI * -0.5;
+
+      ctx.strokeStyle = "rgba(140, 140, 140, 0.5)";
+      ctx.lineWidth = r * 2 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * -12.5) * sf, (y + 12.5 + Math.sin(a) * -12.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(140, 140, 140, 0.5)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf, r * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(80, 80, 80, 0.5)";
+      ctx.lineWidth = r / 6 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * 0.5) * r) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * 0.5) * r) * sf);
+      ctx.arc((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf, r * sf, Math.PI * 0.5 + a, Math.PI * 1.5 + a, true);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * -0.5) * r) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * -0.5) * r) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(190, 190, 190, 0.5)";
+      ctx.lineWidth = r * 0.21 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * 0.5) * (r * 0.72)) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * 0.5) * (r * 0.72)) * sf);
+      ctx.arc((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf, r * 0.72 * sf, Math.PI * 0.5 + a, Math.PI * 1.5 + a, true);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * -0.5) * (r * 0.72)) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * -0.5) * (r * 0.72)) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(80, 80, 80, 0.5)";
+      ctx.beginPath();
+      var an = 0
+      for(var gong = 0; gong < 6; gong ++) {
+        if (gong == 0) {
+          ctx.moveTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        }
+        ctx.lineTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        an += Math.PI * 0.3333;
+      }
+      ctx.fill();
+
+      ctx.beginPath();
+      var an = 0
+      for(var gong = 0; gong < 8; gong ++) {
+        if (gong == 0) {
+          ctx.moveTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        }
+        ctx.lineTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        an += Math.PI * 0.3333;
+      }
+      ctx.stroke();
+
+      var spikes = [{x: (x + 12.5 + Math.cos(a + Math.PI * 0.5) * r + Math.cos(a) * (-12.5)), y: (y + 12.5 + Math.sin(a + Math.PI * 0.5) * r + Math.sin(a) * (-12.5)), a: a + Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a - Math.PI * 0.5) * r + Math.cos(a) * (-12.5)), y: (y + 12.5 + Math.sin(a - Math.PI * 0.5) * r + Math.sin(a) * (-12.5)), a: a - Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a - Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a - Math.PI * 0.5) * r), a: a - Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(a + Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(a + Math.PI * 0.5) * r), a: a + Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(Math.PI / -15 * (5) + a + Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(Math.PI / -15 * (5) + a + Math.PI * 0.5) * r), a: Math.PI / -15 * (5) + a + Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(Math.PI / -15 * (10) + a + Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(Math.PI / -15 * (10) + a + Math.PI * 0.5) * r), a: Math.PI / -15 * (10) + a + Math.PI * 0.5}
+      ];
+
+      /*ctx.fillStyle = "rgb(255, 200, 200)";
+      ctx.beginPath();
+      ctx.arc(spikes[2].x * sf, spikes[2].y * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((spikes[2].x + Math.cos(spikes[2].a) * 30) * sf, (spikes[2].y + Math.sin(spikes[2].a) * 30) * sf, 50 * sf, 0, Math.PI * 2, false);
+      ctx.fill();*/
+      
+      for(var gong = 0; gong < spikes.length; gong ++) {
+        ctx.fillStyle = "rgba(130, 130, 130, 0.5)";
+        ctx.beginPath();
+        ctx.moveTo((spikes[gong].x + Math.cos(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a) * (r / 3)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a) * (r / 3)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(80, 80, 80, 0.5)";
+        ctx.lineWidth = r / 6 * sf;
+        ctx.beginPath();
+        ctx.moveTo((spikes[gong].x + Math.cos(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a) * (r / 3)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a) * (r / 3)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.stroke();
+      }
+  } else if (type == "woodcutter body") {
+    ctx.fillStyle = "rgba(200, 10, 5, 0.5)";
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+      ctx.strokeStyle = "rgba(100, 5, 2.5, 0.5)";
+      ctx.lineWidth = 1.5 * sf;
+      var a = Math.PI * -0.5;
+      var val = Math.sqrt(2);
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a + Math.PI * 0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.25) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * 0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.25) * 12.5 * val) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(160, 160, 160, 0.5)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a) * 7 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * 7 + Math.sin(a + Math.PI * 0.5) * 7) * sf, 3 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.5) * 7) * sf, 3 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a) * -7 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * -7 + Math.sin(a + Math.PI * 0.5) * 7) * sf, 3 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255, 40, 40, 0.5)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a) * 7 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * 7 + Math.sin(a + Math.PI * 0.5) * 7) * sf, 1.5 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.fillStyle = "rgba(40, 255, 40, 0.5)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.5) * 7) * sf, 1.5 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.fillStyle = "rgba(40, 255, 40, 0.5)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a) * -7 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * -7 + Math.sin(a + Math.PI * 0.5) * 7) * sf, 1.5 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+  } else if (type == "polluter stack") {
+    var a = 0;
+      if (rotation == "up") {
+        a = Math.PI * -0.5;
+      } else if (rotation == "down") {
+        a = Math.PI * 0.5;
+      } else if (rotation == "left") {
+        a = Math.PI;
+      }
+
+      var g = ctx.createLinearGradient((x + 12.5 + Math.cos(a) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5) * sf, (x + 12.5 + Math.cos(a) * -12.5) * sf, (y + 12.5 + Math.sin(a) * -12.5) * sf);
+      g.addColorStop(0, "rgba(150, 0, 0, 0.5)");
+      g.addColorStop(0.75, "rgba(50, 0, 0, 0.5)");
+      g.addColorStop(1, "rgba(50, 0, 0, 0.5)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.lineWidth = 4 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * -0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * -0.5) * 12.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * 0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * 0.5) * 12.5) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(75, 0, 0, 0.5)";
+      ctx.lineWidth = 2.5 * sf;
+      var val = Math.sqrt(2) * 0.94;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a + Math.PI * 0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.25) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * 0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.25) * 12.5 * val) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(170, 0, 0, 0.5)";
+      ctx.beginPath();
+      ctx.moveTo((x + 5) * sf, (y + 16) * sf);
+      ctx.lineTo((x + 8) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 17) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 20) * sf, (y + 16) * sf);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(100, 0, 0, 0.5)";
+      ctx.lineWidth = 1.5 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 5) * sf, (y + 16) * sf);
+      ctx.lineTo((x + 8) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 17) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 20) * sf, (y + 16) * sf);
+      ctx.stroke();
+
+
+
+
+      ctx.fillStyle = "rgba(20, 60, 60, 0.5)";
+      ctx.beginPath();
+      ctx.ellipse((x + 12.5) * sf, (y - 10) * sf, 4.5 * sf, 3 * sf, 0, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse((x + 12.5) * sf, (y - 10) * sf, 4.5 * sf, 3 * sf, 0, 0, Math.PI * 2, false);
+      ctx.stroke();
+  } else if (type == "polluter input") {
+      ctx.fillStyle = "rgba(150, 0, 0, 0.5)";
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      var a = 0;
+      if (rotation == "up") {
+        a = Math.PI * -0.5;
+      } else if (rotation == "down") {
+        a = Math.PI * 0.5;
+      } else if (rotation == "left") {
+        a = Math.PI;
+      }
+
+      ctx.strokeStyle = "rgba(75, 0, 0, 0.5)";
+      ctx.lineWidth = 2.5 * sf;
+      var val = Math.sqrt(2) * 0.94;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a + Math.PI * 0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.25) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * 0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.25) * 12.5 * val) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(75, 0, 0, 0.5)";
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 7) * sf, (y + 12.5 + Math.sin(a) * 7) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -4 + Math.cos(a + Math.PI * 0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * -4 + Math.sin(a + Math.PI * 0.5) * 7) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -4 + Math.cos(a + Math.PI * -0.5) * 7) * sf, (y + 12.5 + Math.sin(a) * -4 + Math.sin(a + Math.PI * -0.5) * 7) * sf);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.lineWidth = 4 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * -0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * -0.5) * 12.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * 12.5 + Math.cos(a + Math.PI * 0.5) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5 + Math.sin(a + Math.PI * 0.5) * 12.5) * sf);
+      ctx.stroke();
   }
 }
 
@@ -6730,55 +8252,53 @@ var initialize = function() {
       }
     }
   }
+  for(var i = 0; i < 8; i++) {
+    for(var j = 0; j < 8; j++) {
+      if (ran(2) == 1) {
+        platforms[0].under[i][j] = new under(i + 9, j + 4, "pipework", 1, "main");
+      }
+    }
+  }
 };
 initialize();
 
 
+var sheetReference = [{item: "pipe", sheet: "pipe"}, {item: "chest", sheet: "production"}, {item: "generator", sheet: "production"}, {item: "harvester", sheet: "production"}, {item: "devastator", sheet: "production"}, {item: "appraiser", sheet: "production"}, {item: "chipper", sheet: "production"}, {item: "woodcutter", sheet: "production", mod: 2}, {item: "cannon", sheet: "pipe"}];
 
-
-var getCostAtPoint = function(item, x, y, player) {
+var getCostAtPoint = function(item, x, y, platform, player) {
   var temp = {cost: 0, time: 0}
+
+  var usingPlat = false;
+
+  if (platform.tiles) {
+    usingPlat = true;
+  }
   var sheet = 0;
+
+  var mod = 1;
+  if (usingPlat) {
   if (player == 1) {
-    sheet = p1.tilemap;
+    sheet = platform.tiles.p1;
   } else {
-    sheet = p2.tilemap;
+    sheet = platform.tiles.p2;
   }
-  if (item == "pipe") {
-    temp.cost = sheet.pipe.costPlacement[x][y];
-    temp.time = sheet.pipe.timePlacement[x][y];
-    return(temp)
-  } else if (item == "chest") {
-    temp.cost += sheet.production.costPlacement[x][y];
-    temp.time += sheet.production.timePlacement[x][y];
-    return(temp);
-  } else if (item == "generator") {
-    temp.cost += sheet.production.costPlacement[x][y];
-    temp.time += sheet.production.timePlacement[x][y];
-    return(temp);
-  } else if (item == "harvester") {
-    temp.cost += sheet.production.costPlacement[x][y];
-    temp.time += sheet.production.timePlacement[x][y];
-    return(temp);
-  } else if (item == "devastator") {
-    temp.cost += sheet.production.costPlacement[x][y];
-    temp.time += sheet.production.timePlacement[x][y];
-    return(temp);
-  } else if (item == "appraiser") {
-    temp.cost += sheet.production.costPlacement[x][y];
-    temp.time += sheet.production.timePlacement[x][y];
-    return(temp);
-  } else if (item == "chipper") {
-    temp.cost += sheet.production.costPlacement[x][y];
-    temp.time += sheet.production.timePlacement[x][y];
-    return(temp);
-  } else if (item == "cannon") {
-    temp.cost += sheet.pipe.costPlacement[x][y];
-    temp.time += sheet.pipe.timePlacement[x][y];
-    return(temp);
   } else {
-    return({cost: 0, time: 0});
+    if (player == 1) {
+      sheet = p1.tilemap;
+    } else {
+      sheet = p2.tilemap;
+    }
   }
+  for(var goob = 0; goob < sheetReference.length; goob ++) {
+    if (sheetReference[goob].item == item) {
+      if (sheetReference[goob].sheet == "pipe") {
+        temp.cost += sheet.pipe.cost[x][y];
+      } else if (sheetReference[goob].sheet == "production") {
+        temp.cost += sheet.production.cost[x][y];
+      }
+    }
+  }
+  return temp;
 };
 
 
@@ -6831,7 +8351,19 @@ var compositeSets = [
     down: [{name: "artillery", position: {x: 0, y: 0}, rotation: "up"}, {name: "artillery pointer cardinal", position: {x: 1, y: 0}, rotation: "left"}, {name: "artillery pointer cardinal", position: {x: 0, y: 1}, rotation: "up"}, {name: "artillery pointer diagonal", position: {x: 1, y: 1}, rotation: "up"}],
     left: [{name: "artillery", position: {x: 0, y: 0}, rotation: "up"}, {name: "artillery pointer cardinal", position: {x: 1, y: 0}, rotation: "left"}, {name: "artillery pointer cardinal", position: {x: 0, y: 1}, rotation: "up"}, {name: "artillery pointer diagonal", position: {x: 1, y: 1}, rotation: "up"}],
     right: [{name: "artillery", position: {x: 0, y: 0}, rotation: "up"}, {name: "artillery pointer cardinal", position: {x: 1, y: 0}, rotation: "left"}, {name: "artillery pointer cardinal", position: {x: 0, y: 1}, rotation: "up"}, {name: "artillery pointer diagonal", position: {x: 1, y: 1}, rotation: "up"}]
-  }, isNonCentered: true}
+  }, isNonCentered: true},
+  {name: "woodcutter", tiles: {
+    up: [{name: "woodcutter body", position: {x: 0, y: 0}, rotation: "up"}, {name: "woodcutter saw", position: {x: 0, y: -1}, rotation: "up"}],
+    down: [{name: "woodcutter body", position: {x: 0, y: 0}, rotation: "down"}, {name: "woodcutter saw", position: {x: 0, y: 1}, rotation: "down"}],
+    left: [{name: "woodcutter body", position: {x: 0, y: 0}, rotation: "left"}, {name: "woodcutter saw", position: {x: -1, y: 0}, rotation: "left"}],
+    right: [{name: "woodcutter body", position: {x: 0, y: 0}, rotation: "right"}, {name: "woodcutter saw", position: {x: 1, y: 0}, rotation: "right"}]
+  }},
+  {name: "polluter", tiles: {
+    up: [{name: "polluter input", position: {x: 0, y: 0}, rotation: "up"}, {name: "polluter stack", position: {x: 0, y: -1}, rotation: "down"}],
+    down: [{name: "polluter input", position: {x: 0, y: 0}, rotation: "down"}, {name: "polluter stack", position: {x: 0, y: 1}, rotation: "up"}],
+    left: [{name: "polluter input", position: {x: 0, y: 0}, rotation: "left"}, {name: "polluter stack", position: {x: -1, y: 0}, rotation: "right"}],
+    right: [{name: "polluter input", position: {x: 0, y: 0}, rotation: "right"}, {name: "polluter stack", position: {x: 1, y: 0}, rotation: "left"}]
+  }}
 ];
 
 
@@ -7019,7 +8551,7 @@ var place_phase = function() {
     if (comp == false) {
       var index = accessPoint(x + 1, y + 1, "main")
       if (index == 0 && index != null) {
-        var temp = getCostAtPoint(currentItems[itemSelected - 1].item, getCoordsOnPlatform(x, y).x, getCoordsOnPlatform(x, y).y, activePlayer);
+        var temp = getCostAtPoint(currentItems[itemSelected - 1].item, getCoordsOnPlatform(x, y).x, getCoordsOnPlatform(x, y).y, getCoordsOnPlatform(x, y).platform, activePlayer);
     	  ghost(x * 25, y * 25, currentItems[itemSelected - 1].item, currentVariant, rot)
         if (temp) {
           ctx.fillStyle = "rgb(40, 100, 180)";
@@ -7072,7 +8604,7 @@ var place_phase = function() {
         }
       }
       if (works) {
-        var temp = getCostAtPoint(currentItems[itemSelected - 1].item, getCoordsOnPlatform(x, y).x, getCoordsOnPlatform(x, y).y, activePlayer);
+        var temp = getCostAtPoint(currentItems[itemSelected - 1].item, getCoordsOnPlatform(x, y).x, getCoordsOnPlatform(x, y).y, getCoordsOnPlatform(x, y).platform, activePlayer);
         if (temp) {
           ctx.fillStyle = "rgb(40, 100, 180)";
           ctx.fillRect(mx, my, 100 * sf, 40 * sf);
@@ -7218,6 +8750,8 @@ var actionTime = 0;
 
 
 
+var routeMode = "selecting";
+var tempOutput = 0;
 
 var bonusUi = 0;
 var bonusUiPage = 0;
@@ -7288,6 +8822,9 @@ var scan = function() {
     if (target.nextDrop) {
       ilist.push("nextdrop");
     }
+    if (target.hasRouting) {
+      ilist.push("routing");
+    }
 
 
 
@@ -7357,6 +8894,7 @@ var scan = function() {
           ctx.fillRect(15 * sf, (ioffset) * sf, 108 * sf, 18 * sf);
           ctx.fillStyle = "rgb(0, 0, 0)";
           ctx.font = (15 * sf) + "px Georgia";
+          ctx.textAlign = "left";
           ctx.fillText("Auto Config", 19 * sf, (ioffset + 13) * sf);
           ctx.lineWidth = 1 * sf;
           ctx.strokeStyle = "rgb(0, 0, 0)";
@@ -7448,6 +8986,7 @@ var scan = function() {
           ctx.fillStyle = "rgb(120, 120, 120)";
           ctx.fillRect(15 * sf, (ioffset) * sf, 80 * sf, 18 * sf);
           ctx.fillStyle = "rgb(0, 0, 0)";
+          ctx.textAlign = "left";
           ctx.font = (15 * sf) + "px Georgia";
           ctx.fillText("Targeting", 19 * sf, (ioffset + 13) * sf);
           ctx.lineWidth = 1 * sf;
@@ -7464,6 +9003,24 @@ var scan = function() {
         } else if (ilist[i] == "nextdrop") {
           ctx.font = (15 * sf) + "px Georgia";
           ctx.fillText("Next drop: " + target.nextDrop, 15 * sf, (ioffset + 13) * sf);
+          ioffset += 20;
+        } else if (ilist[i] == "routing") {
+          ctx.fillStyle = "rgb(200, 200, 200)";
+          ctx.fillRect(15 * sf, (ioffset) * sf, 63 * sf, 18 * sf);
+          ctx.fillStyle = "rgb(0, 0, 0)";
+          ctx.textAlign = "left";
+          ctx.font = (15 * sf) + "px Georgia";
+          ctx.fillText("Routing", 19 * sf, (ioffset + 13) * sf);
+          ctx.lineWidth = 2 * sf;
+          ctx.strokeStyle = "rgb(40, 40, 40)";
+          if (mouseInside(15 * sf, (ioffset) * sf, 63 * sf, 18 * sf)) {
+            ctx.strokeStyle = "rgb(120, 120, 120)";
+            if (md) {
+              md = false;
+              bonusUi = "routing";
+            }
+          }
+          ctx.strokeRect(15 * sf, (ioffset) * sf, 63 * sf, 18 * sf);
           ioffset += 20;
         }
         //too lazy to unindent :P
@@ -7872,6 +9429,118 @@ var scan = function() {
             ctx.font = (12 * sf) + "px Courier New";
             ctx.fillText(target.targets[brick].a, (target.targets[brick].x * 25 + 22) * sf, (target.targets[brick].y * 25 + 6) * sf);
           }
+        } else if (bonusUi == "routing") {
+          ctx.fillStyle = "rgb(160, 170, 130)";
+          ctx.fillRect(160 * sf, 405 * sf, 320 * sf, 75 * sf);
+          ctx.fillStyle = "rgb(215, 100, 0)";
+          ctx.font = (40 * sf) * "px Georgia";
+          ctx.textAlign = "left";
+          ctx.fillText("Routing :D", 170 * sf, 422 * sf);
+
+          ctx.fillStyle = "rgb(80, 85, 65)";
+          ctx.fillRect(175 * sf, 435 * sf, 80 * sf, 25 * sf);
+          ctx.fillRect(260 * sf, 450 * sf, 80 * sf, 25 * sf);
+          ctx.fillRect(355 * sf, 425 * sf, 80 * sf, 25 * sf);
+
+          ctx.font = (30 * sf) + "px Courier New";
+          ctx.fillText("(" + target.currentRouting.length + "/" + target.routeLimit + ")", 267 * sf, 435 * sf);
+
+          ctx.fillStyle = "rgb(240, 255, 195)";
+          ctx.font = (20 * sf) + "px Courier New";
+          ctx.textAlign = "center";
+          ctx.fillText("Undo", 215 * sf, 450 * sf);
+          ctx.fillText("Clear", 300 * sf, 465 * sf);
+          ctx.fillText("View", 395 * sf, 440 * sf);
+
+          ctx.strokeStyle = "rgb(215, 100, 0)";
+          ctx.lineWidth = 1.5 * sf;
+          if (mouseInside(175 * sf, 435 * sf, 80 * sf, 25 * sf)) {
+            ctx.lineWidth = 3 * sf;
+            if (md) {
+              md = false;
+              if (target.currentRouting.length > 0) {
+                target.currentRouting.pop();
+              }
+            }
+          }
+          ctx.strokeRect(175 * sf, 435 * sf, 80 * sf, 25 * sf);
+
+          ctx.strokeStyle = "rgb(215, 100, 0)";
+          ctx.lineWidth = 1.5 * sf;
+          if (mouseInside(260 * sf, 450 * sf, 80 * sf, 25 * sf)) {
+            ctx.lineWidth = 3 * sf;
+            if (md) {
+              md = false;
+              target.currentRouting = [];
+            }
+          }
+          ctx.strokeRect(260 * sf, 450 * sf, 80 * sf, 25 * sf);
+
+          ctx.strokeStyle = "rgb(215, 100, 0)";
+          ctx.lineWidth = 1.5 * sf;
+          if (mouseInside(355 * sf, 425 * sf, 80 * sf, 25 * sf)) {
+            ctx.strokeStyle = "rgb(0, 0, 255)";
+            ctx.lineWidth = 5 * sf;
+            for(var brick = 0; brick < target.currentRouting.length; brick ++) {
+              var start = {x: target.currentRouting[brick].out.x * 25 - 12.5, y: target.currentRouting[brick].out.y * 25 - 12.5};
+              var end = {x: target.currentRouting[brick].input.x * 25 - 12.5, y: target.currentRouting[brick].input.y * 25 - 12.5};
+              var a = Math.atan2(end.y - start.y, end.x - start.x);
+              var w = 2;
+              var b = 5;
+              var p = 6;
+              ctx.fillStyle = "rgba(255, 70, 50, 0.4)";
+              ctx.beginPath();
+              ctx.moveTo((start.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+              ctx.lineTo((start.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+              ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+              ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * b) * sf);
+              ctx.lineTo((end.x + Math.cos(a) * p) * sf, (end.y + Math.sin(a) * p) * sf);
+              ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * b) * sf);
+              ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+              ctx.fill();
+            }
+          }
+          ctx.strokeRect(355 * sf, 425 * sf, 80 * sf, 25 * sf);
+
+
+          var os = target.origins;
+          var ts = target.targets;
+          
+
+
+          if (routeMode == "selecting") {
+            ctx.strokeStyle = "rgb(200, 0, 0)";
+            ctx.lineWidth = 1.5;
+            for(var brick = 0; brick < os.length; brick ++) {
+              var t = accessPoint(os[brick].x, os[brick].y);
+              if (t) {
+                ctx.strokeRect(((os[brick].x - 1) * 25) * sf, ((os[brick].y - 1) * 25) * sf, 25 * sf, 25 * sf);
+                if (mouseInside(((os[brick].x - 1) * 25) * sf, ((os[brick].y - 1) * 25) * sf, 25 * sf, 25 * sf) && md && target.currentRouting.length < target.routeLimit) {
+                  md = false;
+                  routeMode = "outputting";
+                  tempOutput = os[brick];
+                }
+              }
+            }
+          } else if (routeMode == "outputting") {
+            ctx.strokeStyle = "rgb(0, 200, 0)";
+            ctx.lineWidth = 1.5;
+            for(var brick = 0; brick < ts.length; brick ++) {
+              var t = accessPoint(ts[brick].x, ts[brick].y);
+              if (t) {
+                ctx.strokeRect(((ts[brick].x - 1) * 25) * sf, ((ts[brick].y - 1) * 25) * sf, 25 * sf, 25 * sf);
+                if (mouseInside(((ts[brick].x - 1) * 25) * sf, ((ts[brick].y - 1) * 25) * sf, 25 * sf, 25 * sf) && md && target.currentRouting.length < target.routeLimit) {
+                  md = false;
+                  target.currentRouting.push({out: {x: tempOutput.x, y: tempOutput.y}, input: {x: ts[brick].x, y: ts[brick].y}});
+                  routeMode = "selecting";
+                }
+              }
+            }
+          }
+          if (mouseInside(160 * sf, 405 * sf, 320 * sf, 75 * sf) && md) {
+            tempOutput = 0;
+            routeMode = "selecting"
+          }
         }
       }
     }
@@ -7889,7 +9558,11 @@ var scan = function() {
   	ctx.strokeStyle = "rgb(230, 210, 60)";
     ctx.lineWidth = 2 * sf;
     ctx.strokeRect(((lock.x - 1) * 25) * sf, ((lock.y - 1) * 25) * sf, 25 * sf, 25 * sf);
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.lineWidth = 3 * sf;
+    ctx.strokeRect(((lock.x - 1) * 25 - 3) * sf, ((lock.y - 1) * 25 - 3) * sf, 31 * sf, 31 * sf);
     ctx.fillStyle = "rgb(0, 0, 0)";
+    ctx.textAlign = "left";
     ctx.font = (15 * sf) + "px Georgia";
     ctx.fillText("X: " + lock.x + ", Y: " + lock.y, 15 * sf, 63 * sf);
   }
@@ -7900,6 +9573,7 @@ var scan = function() {
     lock.x = x;
     lock.y = y;
     ctx.fillStyle = "rgb(0, 0, 0)";
+    ctx.textAlign = "left";
     ctx.font = (15 * sf) + "px Georgia";
     ctx.fillText("X: " + x + ", Y: " + y, 15 * sf, 63 * sf);
     var object = accessPoint(lock.x, lock.y);
@@ -8799,6 +10473,191 @@ var drawIcon = function(icon, x, y) {
       ctx.moveTo((x + 7) * sf, (y + 12.5) * sf);
       ctx.lineTo((x + 18) * sf, (y + 12.5) * sf);
       ctx.stroke();
+  } else if (icon == "firing array bp") {
+    x -= 12.5;
+    y -= 12.5;
+    ctx.fillStyle = "rgb(80, 170, 240)";
+      ctx.fillRect((x + 2) * sf, (y + 2) * sf, 21 * sf, 21 * sf);
+      ctx.fillStyle = "rgb(5, 20, 80)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5) * sf, (y + 17.5) * sf, 2.4 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 6) * sf, (y + 14.5) * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((x + 19) * sf, (y + 14.5) * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.strokeStyle = "rgb(5, 20, 80)";
+      ctx.lineWidth = 1 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 6) * sf, (y + 14.5) * sf);
+      ctx.lineTo((x + 6) * sf, (y + 20) * sf);
+      ctx.lineTo((x + 12.5) * sf, (y + 17.5) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 20) * sf);
+      ctx.lineTo((x + 19) * sf, (y + 14.5) * sf);
+      ctx.stroke();
+
+      var a = Math.PI * -0.5;
+      
+      var s = {x: 12.5, y: 14.5}
+      var angles = [a - Math.PI * 0.3, a - Math.PI * 0.15, a, a + Math.PI * 0.15, a + Math.PI * 0.3];
+
+      ctx.fillStyle = "rgb(5, 20, 80)";
+
+      for(var gong = 0; gong < angles.length; gong ++) {
+        var start = {x: s.x + Math.cos(angles[gong]) * 2.5 + x, y: s.y + Math.sin(angles[gong]) * 2.5 + y};
+        var end = {x: s.x + Math.cos(angles[gong]) * 7.5 + x, y: s.y + Math.sin(angles[gong]) * 7.5 + y}
+        var a = Math.atan2(end.y - start.y, end.x - start.x);
+        var w = 1;
+        var b = 3;
+        var p = 4;
+        ctx.beginPath();
+        ctx.moveTo((start.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+        ctx.lineTo((start.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (start.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * w) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * -0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * -0.5) * b) * sf);
+        ctx.lineTo((end.x + Math.cos(a) * p) * sf, (end.y + Math.sin(a) * p) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * b) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * b) * sf);
+        ctx.lineTo((end.x + Math.cos(a + Math.PI * 0.5) * w) * sf, (end.y + Math.sin(a + Math.PI * 0.5) * w) * sf);
+        ctx.fill();
+      }
+  } else if (icon == "woodcutter") {
+    x -= 12.5;
+    y -= 12.5;
+    var r = 10;
+      var a = Math.PI * -0.5;
+
+      ctx.strokeStyle = "rgb(140, 140, 140)";
+      ctx.lineWidth = r * 2 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * -12.5) * sf, (y + 12.5 + Math.sin(a) * -12.5) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgb(140, 140, 140)";
+      ctx.beginPath();
+      ctx.arc((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf, r * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgb(80, 80, 80)";
+      ctx.lineWidth = r / 6 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * 0.5) * r) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * 0.5) * r) * sf);
+      ctx.arc((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf, r * sf, Math.PI * 0.5 + a, Math.PI * 1.5 + a, true);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * -0.5) * r) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * -0.5) * r) * sf);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgb(190, 190, 190)";
+      ctx.lineWidth = r * 0.21 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * 0.5) * (r * 0.72)) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * 0.5) * (r * 0.72)) * sf);
+      ctx.arc((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333)) * sf, r * 0.72 * sf, Math.PI * 0.5 + a, Math.PI * 1.5 + a, true);
+      ctx.lineTo((x + 12.5 + Math.cos(a) * -12.5 + Math.cos(a + Math.PI * -0.5) * (r * 0.72)) * sf, (y + 12.5 + Math.sin(a) * -12.5 + Math.sin(a + Math.PI * -0.5) * (r * 0.72)) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgb(80, 80, 80)";
+      ctx.beginPath();
+      var an = 0
+      for(var gong = 0; gong < 6; gong ++) {
+        if (gong == 0) {
+          ctx.moveTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        }
+        ctx.lineTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        an += Math.PI * 0.3333;
+      }
+      ctx.fill();
+
+      ctx.beginPath();
+      var an = 0
+      for(var gong = 0; gong < 8; gong ++) {
+        if (gong == 0) {
+          ctx.moveTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        }
+        ctx.lineTo((x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(an) * (r * 0.25)) * sf, (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(an) * (r * 0.25)) * sf);
+        an += Math.PI * 0.3333;
+      }
+      ctx.stroke();
+
+      var spikes = [{x: (x + 12.5 + Math.cos(a + Math.PI * 0.5) * r + Math.cos(a) * (-12.5)), y: (y + 12.5 + Math.sin(a + Math.PI * 0.5) * r + Math.sin(a) * (-12.5)), a: a + Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a - Math.PI * 0.5) * r + Math.cos(a) * (-12.5)), y: (y + 12.5 + Math.sin(a - Math.PI * 0.5) * r + Math.sin(a) * (-12.5)), a: a - Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a - Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a - Math.PI * 0.5) * r), a: a - Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(a + Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(a + Math.PI * 0.5) * r), a: a + Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(Math.PI / -15 * (5) + a + Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(Math.PI / -15 * (5) + a + Math.PI * 0.5) * r), a: Math.PI / -15 * (5) + a + Math.PI * 0.5},
+      {x: (x + 12.5 + Math.cos(a) * (-12.5 + Math.PI * r * 0.333) + Math.cos(Math.PI / -15 * (10) + a + Math.PI * 0.5) * r), y: (y + 12.5 + Math.sin(a) * (-12.5 + Math.PI * r * 0.333) + Math.sin(Math.PI / -15 * (10) + a + Math.PI * 0.5) * r), a: Math.PI / -15 * (10) + a + Math.PI * 0.5}
+      ];
+
+      /*ctx.fillStyle = "rgb(255, 200, 200)";
+      ctx.beginPath();
+      ctx.arc(spikes[2].x * sf, spikes[2].y * sf, 2 * sf, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc((spikes[2].x + Math.cos(spikes[2].a) * 30) * sf, (spikes[2].y + Math.sin(spikes[2].a) * 30) * sf, 50 * sf, 0, Math.PI * 2, false);
+      ctx.fill();*/
+      
+      for(var gong = 0; gong < spikes.length; gong ++) {
+        ctx.fillStyle = "rgb(130, 130, 130)";
+        ctx.beginPath();
+        ctx.moveTo((spikes[gong].x + Math.cos(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a) * (r / 3)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a) * (r / 3)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.fill();
+        ctx.strokeStyle = "rgb(80, 80, 80)";
+        ctx.lineWidth = r / 6 * sf;
+        ctx.beginPath();
+        ctx.moveTo((spikes[gong].x + Math.cos(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a + Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a) * (r / 3)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a) * (r / 3)) * sf);
+        ctx.lineTo((spikes[gong].x + Math.cos(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf, (spikes[gong].y + Math.sin(spikes[gong].a - Math.PI * 0.5) * (r / 4)) * sf);
+        ctx.stroke();
+      }
+  } else if (icon == "polluter") {
+    x -= 12.5;
+    y -= 12.5;
+    var a = Math.PI * 0.5;
+
+      var g = ctx.createLinearGradient((x + 12.5 + Math.cos(a) * 12.5) * sf, (y + 12.5 + Math.sin(a) * 12.5) * sf, (x + 12.5 + Math.cos(a) * -12.5) * sf, (y + 12.5 + Math.sin(a) * -12.5) * sf);
+      g.addColorStop(0, "rgb(150, 0, 0)");
+      g.addColorStop(0.75, "rgb(50, 0, 0)");
+      g.addColorStop(1, "rgb(50, 0, 0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x * sf, y * sf, 25 * sf, 25 * sf);
+
+      ctx.strokeStyle = "rgb(75, 0, 0)";
+      ctx.lineWidth = 2.5 * sf;
+      var val = Math.sqrt(2) * 0.94;
+      ctx.beginPath();
+      ctx.moveTo((x + 12.5 + Math.cos(a + Math.PI * 0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.25) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * 0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * 0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.75) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.75) * 12.5 * val) * sf);
+      ctx.lineTo((x + 12.5 + Math.cos(a + Math.PI * -0.25) * 12.5 * val) * sf, (y + 12.5 + Math.sin(a + Math.PI * -0.25) * 12.5 * val) * sf);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgb(170, 0, 0)";
+      ctx.beginPath();
+      ctx.moveTo((x + 5) * sf, (y + 16) * sf);
+      ctx.lineTo((x + 8) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 17) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 20) * sf, (y + 16) * sf);
+      ctx.fill();
+      ctx.strokeStyle = "rgb(100, 0, 0)";
+      ctx.lineWidth = 1.5 * sf;
+      ctx.beginPath();
+      ctx.moveTo((x + 5) * sf, (y + 16) * sf);
+      ctx.lineTo((x + 8) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 17) * sf, (y - 10) * sf);
+      ctx.lineTo((x + 20) * sf, (y + 16) * sf);
+      ctx.stroke();
+
+
+
+
+      ctx.fillStyle = "rgb(20, 60, 60)";
+      ctx.beginPath();
+      ctx.ellipse((x + 12.5) * sf, (y - 10) * sf, 4.5 * sf, 3 * sf, 0, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse((x + 12.5) * sf, (y - 10) * sf, 4.5 * sf, 3 * sf, 0, 0, Math.PI * 2, false);
+      ctx.stroke();
   }
 }
 
@@ -9167,7 +11026,7 @@ var shop = function() {
     } else if (s[selectedItem] == "smelter") {
       tempo.cost = 60;
     } else if (s[selectedItem] == "mosquito") {
-      tempo.cost = 20;
+      tempo.cost = 23;
     } else if (s[selectedItem] == "drill m") {
       tempo.cost = 90;
     } else if (s[selectedItem] == "artillery") {
@@ -9178,7 +11037,11 @@ var shop = function() {
       tempo.cost = 18;
     } else if (s[selectedItem] == "firing array bp") {
       tempo.cost = 30;
-    } 
+    } else if (s[selectedItem] == "woodcutter") {
+      tempo.cost = 48;
+    } else if (s[selectedItem] == "polluter") {
+      tempo.cost = 40;
+    }
     ctx.fillStyle = "rgb(0, 0, 0)";
     ctx.font = (16 * sf) + "px Courier New";
     ctx.textAlign = "center";
@@ -9404,6 +11267,10 @@ var rotation = function() {
               }
             }
           }
+          if (target.flashValues != undefined) {
+            target.flashValues();
+          }
+          console.log("FLASHED VALUES")
         }
       }
       ctx.strokeRect(405 * sf, 405 * sf, 85 * sf, 85 * sf);
@@ -9441,6 +11308,7 @@ var rotation = function() {
             } else {
               target.variant = 1;
             }
+            console.log("FLASHED VALUES")
             target.flashValues();
           }
         }
@@ -9741,9 +11609,15 @@ var playerStats = function() {
     ctx.fillText("Player 1 Stats: ", 10 * sf, 420 * sf);
 
 
-
-
-    ctx.fillText("Base Health: " + accessPoint(13, 11, "main").health, 10 * sf, 450 * sf);
+    if (turn < 7) {
+      if (accessPoint(13, 11, "main")) {
+        ctx.fillText("Base Health: " + accessPoint(13, 11, "main").health, 10 * sf, 450 * sf);
+      }
+    } else {
+      if (accessPoint(14, 12, "main")) {
+        ctx.fillText("Base Health: " + accessPoint(14, 12, "main").health, 10 * sf, 450 * sf);
+      }
+    }
   } else {
     p = p2
     ctx.fillText("Player 2 Stats: ", 10 * sf, 415 * sf);
@@ -9751,7 +11625,15 @@ var playerStats = function() {
 
 
 
-    ctx.fillText("Base Health: " + accessPoint(12, 4, "main").health, 10 * sf, 450 * sf);
+    if (turn < 7) {
+      if (accessPoint(12, 4, "main")) {
+        ctx.fillText("Base Health: " + accessPoint(12, 4, "main").health, 10 * sf, 450 * sf);
+      }
+    } else {
+      if (accessPoint(11, 3, "main")) {
+        ctx.fillText("Base Health: " + accessPoint(11, 3, "main").health, 10 * sf, 450 * sf);
+      }
+    }
   }
   ctx.fillText("Scrap: " + p.scrap, 10 * sf, 435 * sf);
 
@@ -9905,6 +11787,51 @@ var keyPresses = function() {
     directions.s = false;
     mode = "shop";
   }
+};
+
+var messages = [{player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}, {player: "gilbert", msg: "fuck you asshole", time: "3:00 pm"}];
+var messageOffset = 0;
+var currentMessage = "";
+
+var chat = function() {
+	var minOffset = messages.length * -20 + 120;
+	if (directions.up && messageOffset > minOffset) {
+		messageOffset -= 4;
+	}
+	var maxOffset = 0;
+	if (directions.down && messageOffset < maxOffset) {
+		messageOffset += 4;
+	}
+	
+	ctx.fillStyle = "rgb(150, 150, 150)";
+	ctx.fillRect(0, 300 * sf, 500 * sf, 200 * sf);
+	ctx.fillStyle = "rgb(0, 0, 0)";
+	ctx.textAlign = "left";
+	ctx.font = (30 * sf) + "px Courier New";
+	ctx.fillText("Chat:", 10 * sf, 330 * sf);
+	ctx.font = (16 * sf) + "px Courier New";
+	for (var i = 0; i < messages.length; i++) {
+		var y = (440 - i * 20) - messageOffset;
+		if (y > 340 && y < 460) {
+			ctx.fillText(messages[i].player + "@" + messages[i].time + ": " + messages[i].msg, 20 * sf, y * sf);
+		}
+	}
+	if (newKey) {
+		currentMessage += newKey;
+		newKey = false;
+		messageOffset = 0;
+	}
+	ctx.fillStyle = "rgb(90, 90, 90)";
+	ctx.fillRect(5 * sf, 465 * sf, 490 * sf, 30 * sf);
+	ctx.fillStyle = "rgb(0, 0, 0)";
+	ctx.fillText(currentMessage, 10 * sf, 480 * sf);
+	
+	if (sendMessage) {
+		sendMessage = false;
+		var now = new Date();
+		messages.splice(0, 0, {player: username, msg: currentMessage, time: now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds()});
+		currentMessage = "";
+	}
 }
 
 
@@ -9919,6 +11846,11 @@ var wSunRot = -Math.PI / 4;
 
 
 var sf;
+
+var pulseTime = 0;
+var isPulsing = false;
+var isSplitting = false;
+var splitTime = 0;
 
 
 
@@ -10058,6 +11990,255 @@ var loop = function() {
     platforms[i].render()
     globalRRot += Math.PI * 0.01;
   }
+  //pulsing/isSplitting
+
+  if (isPulsing) {
+    pulseTime += Math.PI / 60;
+    ctx.strokeStyle = "rgba(0, 70, 0, " + (0.65 + Math.sin(pulseTime) * 0.35) + ")";
+    ctx.lineWidth = 2.5 * sf;
+    var l = 11.75;
+    var o = 11.75;
+    var m = 200;
+    var xo = (12 * 25);
+    var yo = (3 * 25);
+
+    //vert
+
+    for(var i = 0; i < Math.ceil(m / (l + o)); i++) {
+      ctx.beginPath();
+      ctx.moveTo(xo * sf, yo * sf);
+      ctx.lineTo(xo * sf, (yo + l) * sf);
+      ctx.stroke();
+      yo += (l + o);
+    }
+
+    var xo = (8 * 25);
+    var yo = (7 * 25);
+
+    //horiz
+
+    for(var i = 0; i < Math.ceil(m / (l + o)); i++) {
+      ctx.beginPath();
+      ctx.moveTo(xo * sf, yo * sf);
+      ctx.lineTo((xo + l) * sf, yo * sf);
+      ctx.stroke();
+      xo += (l + o);
+    }
+  }
+
+  ///////////////////////////////////
+
+  if (isSplitting) {
+    if (splitTime < 180) {
+      splitTime ++;
+
+      if (splitTime < 50) {
+        ctx.fillStyle = "rgba(0, 0, 0, " + (splitTime / 50) + ")";
+      } else if (splitTime < 100) {
+        ctx.fillStyle = "rgb(0, 0, 0)";
+      } else {
+        ctx.fillStyle = "rgba(0, 0, 0, " + (1 - (splitTime - 100) / 80) + ")";
+      }
+      var o = 0;
+
+      if (splitTime < 30) {
+        o = 25;
+      } else if (splitTime < 100) {
+        o = (1 - (splitTime - 30) / 70) * 25;
+      }
+
+      ctx.fillRect(275 * sf, (37.5 + o) * sf, 50 * sf, (275 - o * 2) * sf);
+      ctx.fillRect((162.5 + o) * sf, 150 * sf, (112.5 - o) * sf, 50 * sf);
+      ctx.fillRect(325 * sf, 150 * sf, (112.5 - o) * sf, 50 * sf);
+      
+      if (splitTime == 30) {
+        var main = platforms[0];
+
+        var tl = new platform(8, 3, 4, 4, "main", {anim: true, animStart: {x: 8, y: 3}, animEnd: {x: 7, y: 2}, animTime: 70, sides: {up: true, down: false, left: true, right: false}});
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            tl.grid[i][j] = main.grid[i][j];
+          }
+        }
+
+        var tr = new platform(12, 3, 4, 4, "main", {anim: true, animStart: {x: 12, y: 3}, animEnd: {x: 13, y: 2}, animTime: 70, sides: {up: true, down: false, left: false, right: true}});
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            tr.grid[i][j] = main.grid[i + 4][j];
+          }
+        }
+
+        var bl = new platform(8, 7, 4, 4, "main", {anim: true, animStart: {x: 8, y: 7}, animEnd: {x: 7, y: 8}, animTime: 70, sides: {up: false, down: true, left: true, right: false}});
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            bl.grid[i][j] = main.grid[i][j + 4];
+          }
+        }
+
+        var br = new platform(12, 7, 4, 4, "main", {anim: true, animStart: {x: 12, y: 7}, animEnd: {x: 13, y: 8}, animTime: 70, sides: {up: false, down: true, left: false, right: true}});
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            br.grid[i][j] = main.grid[i + 4][j + 4];
+          }
+        }
+
+        platforms.push(tl);
+        platforms.push(tr);
+        platforms.push(bl);
+        platforms.push(br);
+      }
+
+      if (splitTime == 106) {
+        var p1pipecost = [
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0],
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0],
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0], 
+        [12, 10, 5, 2, 0, 0, 0, 0, 0, 0]];
+        var p2pipecost = [
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12],
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12],
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12], 
+        [0, 0, 0, 0, 0, 0, 2, 5, 10, 12]];
+        var a = 5;
+        var b = 8;
+        var c = 10;
+        var d = 16;
+        var e = 20;
+        var f = 28;
+        var p1prodcost = [
+        [f, e, d, c, b, a, 0, 0, 0, 0], 
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0],
+        [f, e, d, c, b, a, 0, 0, 0, 0]]
+        var p2prodcost = [
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f], 
+        [0, 0, 0, 0, a, b, c, d, e, f]]
+        var main = platforms[0];
+        var np = new platform(7, 2, 10, 10, "main", {tiles: {p1: {pipe: {cost: p1pipecost}, production: {cost: p1prodcost}}, p2: {pipe: {cost: p2pipecost}, production: {cost: p2prodcost}}}});
+        np.grid[4][8] = new piece(12, 11, "p1 base expansion", {info: {x: 14, y: 12}, storage: {x: 11, y: 12}}, "up", 1, "main");
+        np.grid[5][8] = new piece(13, 11, "p1 base expansion", {info: {x: 14, y: 12}, storage: {x: 11, y: 12}}, "right", 1, "main");
+        np.grid[4][9] = new piece(12, 12, "p1 base expansion", {info: {x: 14, y: 12}, storage: {x: 11, y: 12}}, "left", 1, "main");
+        np.grid[5][9] = new piece(13, 12, "p1 base expansion", {info: {x: 14, y: 12}, storage: {x: 11, y: 12}}, "down", 1, "main");
+
+        np.grid[4][0] = new piece(12, 3, "p2 base expansion", {info: {x: 11, y: 3}, storage: {x: 14, y: 3}}, "up", 2, "main");
+        np.grid[5][0] = new piece(13, 3, "p2 base expansion", {info: {x: 11, y: 3}, storage: {x: 14, y: 3}}, "right", 2, "main");
+        np.grid[4][1] = new piece(12, 4, "p2 base expansion", {info: {x: 11, y: 3}, storage: {x: 14, y: 3}}, "left", 2, "main");
+        np.grid[5][1] = new piece(13, 4, "p2 base expansion", {info: {x: 11, y: 3}, storage: {x: 14, y: 3}}, "down", 2, "main");
+
+        np.grid[4][4] = new piece(12, 7, "rock", 0, 0, "resource", "main");
+        np.grid[4][5] = new piece(12, 8, "rock", 0, 0, "resource", "main");
+        np.grid[5][4] = new piece(13, 7, "rock", 0, 0, "resource", "main");
+        np.grid[5][5] = new piece(13, 8, "rock", 0, 0, "resource", "main");
+
+        if (ran(2) == 0) {
+          np.grid[1][4] = new piece(9, 7, "gold", 1, "up", "resource", "main");
+          np.grid[8][5] = new piece(16, 8, "gold", 1, "up", "resource", "main");
+        } else {
+          np.grid[1][5] = new piece(9, 8, "gold", 1, "up", "resource", "main");
+          np.grid[8][4] = new piece(16, 7, "gold", 1, "up", "resource", "main");
+        }
+
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            main.grid[i][j].x --;
+            main.grid[i][j].y --;
+            np.grid[i][j] = main.grid[i][j];
+          }
+        }
+
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            main.grid[i + 4][j].x ++;
+            main.grid[i + 4][j].y --;
+            np.grid[i + 6][j] = main.grid[i + 4][j];
+          }
+        }
+
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            main.grid[i + 4][j + 4].x ++;
+            main.grid[i + 4][j + 4].y ++;
+            np.grid[i + 6][j + 6] = main.grid[i + 4][j + 4];
+          }
+        }
+
+        for(var i = 0; i < 4; i++) {
+          for(var j = 0; j < 4; j++) {
+            main.grid[i][j + 4].x --;
+            main.grid[i][j + 4].y ++;
+            np.grid[i][j + 6] = main.grid[i][j + 4];
+          }
+        }
+        platforms = [np];
+
+        for(var i = 0; i < np.grid.length; i++) {
+          for(var j = 0; j < np.grid[i].length; j++) {
+            var t = np.grid[i][j];
+            if (t) {
+              if (t.hasExpansionUpdate) {
+                t.expansionUpdate();
+              }
+            }
+          }
+        }
+
+        var t = accessPoint(14, 12, "main");
+        if (t) {
+          if (t.type == "p1 base info") {
+            t.health += 5;
+          } else {
+          console.log(t.type);
+        }
+        } else {
+          console.log(t);
+        }
+
+        var t = accessPoint(11, 3, "main");
+        if (t) {
+          if (t.type == "p2 base info") {
+            t.health += 5;
+          } else {
+          console.log(t.type);
+        }
+        } else {
+          console.log(t);
+        }
+      }
+    } else {
+      isSplitting = false;
+
+    }
+
+  }
+
+  ///////////////////////////////////
+
   for(var i = 0; i < projs.length; i++) {
     projs[i].draw();
   }
@@ -10263,7 +12444,7 @@ var loop = function() {
   } else {
     var p = p2;
   }
-  if (isPicking) {
+  if (isPicking && !isSplitting) {
     ctx.fillStyle = "rgba(100, 100, 100, 0.4)";
     ctx.fillRect(0, 0, 500 * sf, 500 * sf);
     ctx.fillStyle = "rgb(0, 0, 0)";
@@ -10293,6 +12474,10 @@ var loop = function() {
       md = false;
       isPicking = false;
     }
+  }
+  
+  if (chatToggle) {
+  	chat();
   }
   
   
