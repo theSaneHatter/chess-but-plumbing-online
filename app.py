@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 # from backend import lib as lib
-
+messages = {}
 
 
 app = Flask(__name__,
@@ -23,7 +23,17 @@ socketio = SocketIO(app)
 def main():
     return render_template('index.html')
 
+@app.route('/request_message',methiods=['POST'])
+def message_handler():
+    data = request.get_json()
+    ret = {'date':time.time()}
+    ret = jsonify(ret)
 
+    print(f'the user sent a message:{data}')
+    return ret
+
+@app.route('/send_message',methiods=['POST'])
+def 
 
 if __name__ == '__main__':
     # lib.backup_logs()
