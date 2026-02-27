@@ -23,6 +23,10 @@ socketio = SocketIO(app)
 def main():
     return render_template('index.html')
 
+@app.route('/hello',methods=['POST','GET'])
+def hello():
+    return jsonify({'response':'hello'})
+
 @app.route('/request_message',methods=['POST'])
 def message_handler():
     data = request.get_json()
