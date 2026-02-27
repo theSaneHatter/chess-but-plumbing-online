@@ -23,7 +23,7 @@ socketio = SocketIO(app)
 def main():
     return render_template('index.html')
 
-@app.route('/request_message',methiods=['POST'])
+@app.route('/request_message',methods=['POST'])
 def message_handler():
     data = request.get_json()
     ret = {'date':time.time()}
