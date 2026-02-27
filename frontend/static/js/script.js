@@ -1,8 +1,15 @@
+
+fetch('/hello')
+  .then(response => response.json())
+  .then(data => {
+    console.log('networking works! response: ', window.prefix);
+  })
+  .catch(err => console.error(err));
+
+
 var ran = function(max) {
   return(Math.floor(Math.random() * max))
 };
-
-
 
 
 var rand = function(max) {
