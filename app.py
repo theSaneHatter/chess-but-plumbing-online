@@ -32,8 +32,8 @@ def message_handler():
     print(f'the user sent a message:{data}')
     return ret
 
-@app.route('/send_message',methiods=['POST'])
-def 
+#@app.route('/send_message',methiods=['POST'])
+#def 
 
 if __name__ == '__main__':
     # lib.backup_logs()
