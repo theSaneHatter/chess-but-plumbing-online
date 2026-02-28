@@ -1,0 +1,11 @@
+
+gilbert: this sends message, returns json object with success:true if went through
+send_message = async function(uid,content) {const response = await fetch("/send_message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "uid":uid,"content":content })
+        });
+const resJs = await response.json()
+console.log(resJs)
+
+}

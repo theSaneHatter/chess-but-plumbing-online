@@ -8,8 +8,8 @@ import os
 import sys
 from pathlib import Path
 # from backend import lib as lib
-messages = {}
 
+messages = {"uid1":[123,"message1"]}
 
 app = Flask(__name__,
             template_folder="frontend/templates/",
@@ -27,17 +27,40 @@ def main():
 def hello():
     return jsonify({'response':'hello'})
 
-@app.route('/request_message',methods=['POST'])
+@app.route('/request_messages',methods=['POST'])
 def message_handler():
+    global messages 
+    
     data = request.get_json()
-    ret = {'date':time.time()}
+    ret = messages
+  #  ret = {'date':time.time()}
     ret = jsonify(ret)
 
     print(f'the user sent a message:{data}')
     return ret
 
-#@app.route('/send_message',methiods=['POST'])
-#def 
+@app.route('/send_message',methods=['POST'])
+def send_message():
+    global messages
+    data = request.get_json()
+    print(f"send_message() request:{data}")
+    uid = data.get('uid')
+    if not messages.get(uid):
+        print(f"@send_message():user refranced non existant uid:{uid}")
+        return 400
+    content = data.get("content")
+    if not content:
+        print(f"@send_message():user refranced non existant content:{content}")
+        return 400
+    print(f"@send_message():uid:>{uid}<,content:>{content}<")
+    messages[uid].append([time.time(), content])
+
+    ret = {"success":"true"}
+    ret = jsonify(ret)
+    return ret
+
+
+        
 
 if __name__ == '__main__':
     # lib.backup_logs()
