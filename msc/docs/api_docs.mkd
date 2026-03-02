@@ -40,6 +40,6 @@ var get_gid = async function(){
 ```
 
 
-[image](/msc/docs/docs.webp)
+![image](docs.webp)
 
 
