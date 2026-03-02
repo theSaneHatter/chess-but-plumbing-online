@@ -1,11 +1,29 @@
 
 gilbert: this sends message, returns json object with success:true if went through
-send_message = async function(uid,content) {const response = await fetch("/send_message", {
+var send_message = async function(gid,uid,content) {const response = await fetch("/send_message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ "uid":uid,"content":content })
+        body: JSON.stringify({ "gid":gid,"content":content, "uid":uid})
         });
 const resJs = await response.json()
 console.log(resJs)
+}
+
+var get_messages = async function(gid,timestamp){
+  const response = await fetch ("/get_messages",{
+      method:"POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "gid":gid, "timestamp":timestamp})
+  })
+  const resJson = await response.json()
+  console.log(resJson)
+
+}
+
+var get_gid = async function(){
+  const response = await fetch ("/get_gid",{
+  )
+  const resJson = await response.json()
+  console.log(resJson)
 
 }

@@ -7,9 +7,10 @@ import requests
 import os
 import sys
 from pathlib import Path
-# from backend import lib as lib
+from backend import lib as lib
 
-messages = {"uid1":[123,"message1"]}
+messages = {"gid0":[{"timestamp":123,"uid":"user1","content":"message1"},
+                    {"timestamp":67,"uid":"user2","content":"message2"}]}
 
 app = Flask(__name__,
             template_folder="frontend/templates/",
@@ -27,16 +28,44 @@ def main():
 def hello():
     return jsonify({'response':'hello'})
 
-@app.route('/request_messages',methods=['POST'])
-def message_handler():
+@app.route('/get_gid', methods=['POST','GET'])
+def get_gid():
+    global messages
+    gid = lib.gen_gid(messages)
+    messages[gid] = [{"timestamp":time.time(),"uid":"SERVER","content":f"gid >{gid}< initialized"}]
+    print(f"@get_gid():user got gid:>{gid}<")
+    ret = {"gid":gid}
+    ret = jsonify(ret)
+    return ret
+           
+
+@app.route('/get_messages',methods=['POST'])
+def get_messages():
     global messages 
     
     data = request.get_json()
-    ret = messages
+    toSend = []
+    gid = data.get('gid')
+    timestamp = data.get("timestamp")
+    if not gid or not timestamp or not messages.get(gid):
+        print(f"@send_message():user refranced non existant (or)[gid:{gid}, timestamp:{timestamp}]")
+        return {"error":"Error sending messages: [gid, timestamp] may not exist"},404
+    for i in messages.get(gid):
+        print(f"@get_messages():i:>{i}<")
+        if i["timestamp"] > timestamp:
+            toSend.append(i)
+    try:
+        timestamp = int(timestamp)
+    except ValueError:
+        print(f"@get_messages():unable to convert timestamp:>{timestamp}< to int")
+        return {"error":"invalud time"},400
+
+    
+    ret = toSend
+    print(f"@get_messages():toSend:>{toSend}<")
   #  ret = {'date':time.time()}
     ret = jsonify(ret)
 
-    print(f'the user sent a message:{data}')
     return ret
 
 @app.route('/send_message',methods=['POST'])
@@ -44,21 +73,23 @@ def send_message():
     global messages
     data = request.get_json()
     print(f"send_message() request:{data}")
+    gid = data.get('gid')
     uid = data.get('uid')
-    if not messages.get(uid):
-        print(f"@send_message():user refranced non existant uid:{uid}")
-        return 400
+    print(f"@debug:messages.get(>{gid}<):>{messages.get(gid)}<")
+    if not messages.get(gid) or not gid or not uid:
+        print(f"@send_message():user refranced non existant gid:{gid}")
+        return {"error":"sending message:receved invalid (or)[gid, uid]"},404
     content = data.get("content")
     if not content:
         print(f"@send_message():user refranced non existant content:{content}")
-        return 400
-    print(f"@send_message():uid:>{uid}<,content:>{content}<")
-    messages[uid].append([time.time(), content])
+        return {"error":"processing message: no/invalid content :("},404
+    print(f"@send_message():[gid:>{gid}<,uid:>{uid}<,content:>{content}<]")
+    messages[gid].append({"timestamp":time.time(),"uid":uid, "content":content})
+    print(f"@send_message():messages:>{messages}<")
 
     ret = {"success":"true"}
     ret = jsonify(ret)
     return ret
-
 
         
 
