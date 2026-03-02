@@ -1,9 +1,8 @@
-# API DOCS
+ # API DOCS
 > some examples
 ## CHAT DOCS
 ### send a message 
-```
-```
+```[javascript]
 var send_message = async function(gid,uid,content) {const response = await fetch("/send_message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -13,11 +12,9 @@ const resJs = await response.json()
 console.log(resJs)
 }
 ```
-```
 
 ### get relevent messages
-```
-```
+```[javascript]
 var get_messages = async function(gid,timestamp){
   const response = await fetch ("/get_messages",{
       method:"POST",
@@ -29,12 +26,10 @@ var get_messages = async function(gid,timestamp){
 
 }
 ```
-```
 
 ### genorate a game_id (gid) for chatting
-- you need a gid to chat. you can use gid1 for testing
-```
-```
+> <p> you need a gid to chat. you can use gid0 for testing. </p>
+```[javascript]
 var get_gid = async function(){
   const response = await fetch ("/get_gid",{
   )
@@ -42,5 +37,4 @@ var get_gid = async function(){
   console.log(resJson)
 
 }
-```
 ```
