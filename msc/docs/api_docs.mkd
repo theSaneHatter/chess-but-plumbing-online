@@ -1,0 +1,46 @@
+# API DOCS
+> some examples
+## CHAT DOCS
+### send a message 
+```
+```
+var send_message = async function(gid,uid,content) {const response = await fetch("/send_message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "gid":gid,"content":content, "uid":uid})
+        });
+const resJs = await response.json()
+console.log(resJs)
+}
+```
+```
+
+### get relevent messages
+```
+```
+var get_messages = async function(gid,timestamp){
+  const response = await fetch ("/get_messages",{
+      method:"POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "gid":gid, "timestamp":timestamp})
+  })
+  const resJson = await response.json()
+  console.log(resJson)
+
+}
+```
+```
+
+### genorate a game_id (gid) for chatting
+- you need a gid to chat. you can use gid1 for testing
+```
+```
+var get_gid = async function(){
+  const response = await fetch ("/get_gid",{
+  )
+  const resJson = await response.json()
+  console.log(resJson)
+
+}
+```
+```
