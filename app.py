@@ -72,16 +72,20 @@ def get_messages():
 def send_message():
     global messages
     data = request.get_json()
-    print(f"send_message() request:{data}")
+    print(f"@send_message() request:>{data}<")
     gid = data.get('gid')
     uid = data.get('uid')
-    print(f"@debug:messages.get(>{gid}<):>{messages.get(gid)}<")
+    try:
+        messages.get(gid)
+    except TypeError:
+        print(f"@send_message:Error:incorrect dataType sent for gid:>{gid}<. Likely sent as Json instead of String.")
+        return {"error":"@send_message:Error:incorrect dataType sent for gid. Likely Json instead of String."},400
     if not messages.get(gid) or not gid or not uid:
-        print(f"@send_message():user refranced non existant gid:{gid}")
+        print(f"@send_message():user refranced non existant gid:>{gid}<")
         return {"error":"sending message:receved invalid (or)[gid, uid]"},404
     content = data.get("content")
     if not content:
-        print(f"@send_message():user refranced non existant content:{content}")
+        print(f"@send_message():user refranced non existant content:>{content}<")
         return {"error":"processing message: no/invalid content :("},404
     print(f"@send_message():[gid:>{gid}<,uid:>{uid}<,content:>{content}<]")
     messages[gid].append({"timestamp":time.time(),"uid":uid, "content":content})
