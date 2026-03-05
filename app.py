@@ -29,7 +29,7 @@ def hello():
     return jsonify({'response':'hello'})
 
 @app.route('/get_gid', methods=['POST','GET'])
-def get_gid():
+def get_gid():e
     global messages
     gid = lib.gen_gid(messages)
     messages[gid] = [{"timestamp":time.time(),"uid":"SERVER","content":f"gid >{gid}< initialized"}]
