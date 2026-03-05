@@ -201,10 +201,18 @@ var directions = {
 var rotActivated = false;
 var newKey = false;
 var sendMessage = false;
+var shift = false;
 addEventListener("keydown", function(e) {
 	if (chatToggle) {
 		if (e.code.substring(0, 3) === "Key") {
-			newKey = e.code.substring(3, 4).toLowerCase();
+			if (shift) {
+				newKey = e.code.substring(3, 4).toUpperCase();
+			} else {
+				newKey = e.code.substring(3, 4).toLowerCase();
+			}
+		}
+		if (e.code.substring(0, 5) === "Digit") {
+			newKey = e.code.substring(5, 6);
 		}
 		if (e.code == "Space") {
 			newKey = " ";
@@ -215,6 +223,9 @@ addEventListener("keydown", function(e) {
 		
 		if (e.code == "Enter") {
 			sendMessage = true;
+		}
+		if (e.code == "ShiftLeft") {
+			shift = true;
 		}
 	} else {
 		if (e.code === "KeyR") {
@@ -301,6 +312,7 @@ addEventListener("keyup", function(e) {
     directions.a = false;
   } else if (e.code == "ShiftLeft") {
     directions.shift = false;
+	shift = false;
   } else if (e.code == "ArrowUp") {
   	directions.up = false;
   } else if (e.code == "ArrowDown") {
