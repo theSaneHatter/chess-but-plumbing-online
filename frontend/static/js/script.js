@@ -1,15 +1,8 @@
-
-fetch('/hello')
-  .then(response => response.json())
-  .then(data => {
-    console.log('networking works! response: ', window.prefix);
-  })
-  .catch(err => console.error(err));
-
-
 var ran = function(max) {
   return(Math.floor(Math.random() * max))
 };
+
+
 
 
 var rand = function(max) {
@@ -267,24 +260,25 @@ addEventListener("keydown", function(e) {
   	  directions.a = true;
   	} else if (e.code == "ShiftLeft") {
   	  directions.shift = true;
-  	} else if (e.code == "ArrowUp") {
-  		directions.up = true;
-  	} else if (e.code == "ArrowDown") {
-  		directions.down = true;
   	} else if (e.code == "ControlLeft") {
   	  if (underToggle) {
   	    underToggle = false;
   	  } else {
   	    underToggle = true;
   	  }
-  	} else if (e.code == "Semicolon") {
+  	}
+  }
+	if (e.code == "Semicolon") {
   		if (chatToggle) {
 	      chatToggle = false;
 	    } else {
 	      chatToggle = true;
  	   }
+  	} else if (e.code == "ArrowUp") {
+  		directions.up = true;
+  	} else if (e.code == "ArrowDown") {
+  		directions.down = true;
   	}
-  }
 });
 
 
@@ -11817,8 +11811,8 @@ var chat = function() {
 	ctx.font = (30 * sf) + "px Courier New";
 	ctx.fillText("Chat:", 10 * sf, 330 * sf);
 	ctx.font = (16 * sf) + "px Courier New";
-	for (var i = 0; i < messages.length; i++) {
-		var y = (440 - i * 20) - messageOffset;
+	for (var i = messages.length - 1; i >= 0; i--) {
+		var y = (440 - (messages.length - i - 1) * 20) - messageOffset;
 		if (y > 340 && y < 460) {
 			ctx.fillText(messages[i].player + "@" + messages[i].time + ": " + messages[i].msg, 20 * sf, y * sf);
 		}
@@ -11836,7 +11830,8 @@ var chat = function() {
 	if (sendMessage) {
 		sendMessage = false;
 		var now = new Date();
-		messages.splice(0, 0, {player: username, msg: currentMessage, time: now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds()});
+		send_message(gameId.gid, username, currentMessage);
+		//messages.push({player: username, msg: currentMessage, time: now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds()});
 		currentMessage = "";
 	}
 }
@@ -11859,7 +11854,51 @@ var isPulsing = false;
 var isSplitting = false;
 var splitTime = 0;
 
+var gameId = "not found";
+var lastTimestamp = 1;
 
+var startGame = async function() {
+	const response = await fetch ("/get_gid",{})
+  	//gameId = await response.json();
+	gameId = {gid:"gid0"};
+	console.log(gameId);
+}
+startGame();
+
+var send_message = async function(gid,uid,content) {
+	console.log("gid: " + gameId + ", content: " + content + ", uid: " + uid);
+	const response = await fetch("/send_message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "gid":gid,"content":content, "uid":uid})
+        });
+const resJs = await response.json()
+console.log(resJs)
+}
+
+var get_messages = async function(gid,timestamp){
+  const response = await fetch ("/get_messages",{
+      method:"POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "gid":gid, "timestamp":timestamp})
+  })
+  const resJson = await response.json()
+  console.log(resJson)
+		
+	for(var i = 0; i < resJson.length; i++) {
+		if (resJson[i].timestamp >= lastTimestamp) {
+			lastTimestamp = resJson[i].timestamp;
+			messages.push({player: resJson[i].uid, msg: resJson[i].content, time: resJson[i].timestamp});
+		}
+	}
+
+}
+
+setInterval(async function() {
+	if (gameId != "not found") {
+	get_messages(gameId.gid, lastTimestamp);
+	}
+}, 500);
 
 
 var loop = function() {
