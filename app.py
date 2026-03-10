@@ -102,5 +102,10 @@ if __name__ == '__main__':
     # config = lib.load_json()
     # port = config['port'] # to change port, edit config.json
     # socketio.run(app, host='0.0.0.0',port=port,debug=True, log_output=True)
-    Flask.run(app, host='0.0.0.0',port=5000,debug=True, log_output=True)
+    try:
+        Flask.run(app, host='0.0.0.0',port=5000,debug=True, log_output=True)
+    except:
+        print(f"WORNING:UNABLE TO RUN APP.")
+
+        Flask.run(app, host='0.0.0.0',port=5000,debug=True)
 
