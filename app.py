@@ -12,6 +12,10 @@ from backend import lib as lib
 messages = {"gid0":[{"timestamp":123,"uid":"user1","content":"message1"},
                     {"timestamp":67,"uid":"user2","content":"message2"}]}
 
+
+actions = {'gid0': [{'timestamp': 123, 'uid': 'user1', 'move': {'x': 3, 'y': 6}}
+                    ]}
+
 app = Flask(__name__,
             template_folder="frontend/templates/",
             static_folder="frontend",
@@ -95,7 +99,65 @@ def send_message():
     ret = jsonify(ret)
     return ret
 
-        
+
+@app.route('/get_actions',methods=['POST'])
+def get_actions():
+    global actions
+    data = request.get_json()
+    toSend = []
+    gid = data.get('gid')
+    timestamp = data.get("timestamp")
+    if not gid or not timestamp or not messages.get(gid):
+        print(f"@get_actions():user refranced non existant (or)[gid:{gid}, timestamp:{timestamp}]")
+        return {"error":"Error sending actions: [gid, timestamp] may not exist"},404
+    for i in actions.get(gid):
+        print(f"@get_actions():i:>{i}<")
+        if i["timestamp"] > timestamp:
+            toSend.append(i)
+    try:
+        timestamp = int(timestamp)
+    except ValueError:
+        print(f"@get_actions():unable to convert timestamp:>{timestamp}< to int")
+        return {"error":"invalud time"},400
+
+    ret = toSend
+    print(f"@get_actions():toSend:>{toSend}<")
+  #  ret = {'date':time.time()}
+    ret = jsonify(ret)
+
+    return ret
+
+@app.route('/send_actions',methods=['POST'])
+def send_actions():
+    global actions
+    data = request.get_json()
+    print(f"@send_actions() request:>{data}<")
+    gid = data.get('gid')
+    uid = data.get('uid')
+    try:
+        messages.get(gid)
+    except TypeError:
+        print(f"@send_actions:Error:incorrect dataType sent for gid:>{gid}<. Likely sent as Json instead of String.")
+        return {"error":"@send_actions:Error:incorrect dataType sent for gid. Likely Json instead of String."},400
+    if not actions.get(gid) or not gid or not uid:
+        print(f"@send_actions():user refranced non existant gid:>{gid}<")
+        return {"error":"sending actions:receved invalid (or)[gid, uid]"},404
+    move = data.get("move")
+    if not move:
+        print(f"@send_actions():user refranced non existant move:>{move}<")
+        return {"error":"processing actions: no/invalid move :("},404
+    print(f"@send_actions():[gid:>{gid}<,uid:>{uid}<,move:>{move}<]")
+    actions[gid].append({"timestamp":time.time(),"uid":uid, "content":content})
+    print(f"@send_actions():actions:>{actions}<")
+
+    ret = {"success":"true"}
+    ret = jsonify(ret)
+    return ret
+
+
+
+
+
 
 if __name__ == '__main__':
     # lib.backup_logs()
