@@ -13,8 +13,9 @@ messages = {"gid0":[{"timestamp":123,"uid":"user1","content":"message1"},
                     {"timestamp":67,"uid":"user2","content":"message2"}]}
 
 
-actions = {'gid0': [{'timestamp': 123, 'uid': 'user1', 'move': {'x': 3, 'y': 6}}
-                    ]}
+actions = {'gid0': [{'timestamp': 123, 'uid': 'user1', 'type':{""},
+                    "data":{"x":0,'y':0} # data only sometimes exists
+                     }]}
 
 app = Flask(__name__,
             template_folder="frontend/templates/",
@@ -107,7 +108,7 @@ def get_actions():
     toSend = []
     gid = data.get('gid')
     timestamp = data.get("timestamp")
-    if not gid or not timestamp or not messages.get(gid):
+    if not gid or not timestamp or not actions.get(gid):
         print(f"@get_actions():user refranced non existant (or)[gid:{gid}, timestamp:{timestamp}]")
         return {"error":"Error sending actions: [gid, timestamp] may not exist"},404
     for i in actions.get(gid):
@@ -138,16 +139,21 @@ def send_actions():
         messages.get(gid)
     except TypeError:
         print(f"@send_actions:Error:incorrect dataType sent for gid:>{gid}<. Likely sent as Json instead of String.")
-        return {"error":"@send_actions:Error:incorrect dataType sent for gid. Likely Json instead of String."},400
+        return {"error":"@send_actions:Error:incorrect dataType sent for gid. Likely Json instead of String.","success":"false"},400
     if not actions.get(gid) or not gid or not uid:
         print(f"@send_actions():user refranced non existant gid:>{gid}<")
-        return {"error":"sending actions:receved invalid (or)[gid, uid]"},404
-    move = data.get("move")
-    if not move:
-        print(f"@send_actions():user refranced non existant move:>{move}<")
-        return {"error":"processing actions: no/invalid move :("},404
-    print(f"@send_actions():[gid:>{gid}<,uid:>{uid}<,move:>{move}<]")
-    actions[gid].append({"timestamp":time.time(),"uid":uid, "content":content})
+        return {"error":"sending actions:receved invalid (or)[gid, uid]","success":"false"},404
+    move_type = data.get("type")
+    if not move_type:
+        print(f"@send_actions():user refranced non existant type:>{move_type}<")
+        return {"error":"processing actions: no/invalid move type:(", "success":"false"},404
+
+    if not data.get("data"):
+        print(f'@debug@send_actions():no move data specified, setting it to None')
+        move_data = None
+
+    print(f"@send_actions():[gid:>{gid}<,uid:>{uid}<,move type:>{move_type}<]")
+    actions[gid].append({"timestamp":time.time(),"uid":uid, "type":move_type,"data":move_data})
     print(f"@send_actions():actions:>{actions}<")
 
     ret = {"success":"true"}
